@@ -1,7 +1,35 @@
 # WMT26 General Translation Shared Task
 
 This repository contains the data for the WMT26 General Translation Shared Task testset as well as the corresponding collected human annotation and how to reproduce them.
-TODO: description of GenMT data
+
+# Data
+
+## Test data
+
+The `data/wmt26-genmt.jsonl` contains the test data in JSONL format. Each line includes the following fields:
+
+- `doc_id`: A unique identifier in the following format: `set_id_###_domain_###_src_lang_###_tgt_lang_###_doc_id`
+- `domain`.
+- `src_lang`.
+- `tgt_lang`.
+- `src_text`.
+- `video`: For speech samples, a dictionary containing the original asset `id` and its `path`; `null` for the other domains.
+- `screenshot`: For social documents with screenshots, a dictionary containing the original asset `id` and its `path`; `null` otherwise.
+- `gold_transcript`: For speech samples, `src_text` contains an ASR-generated transcript of the source video, while `gold_transcript` contains a manually-curated transcript.
+- `prompt_instruction`: Default translation instruction provided to participants.
+- `multimodal_instruction`: Default translation instruction that uses the multimedia content (where available).
+- `evaluation_instruction`: Domain-specific evaluation guidance provided to human evaluators.
+- `refs`: A dictionary containing all available human reference translations, or `{}` if the sample has no reference.
+
+Paths to multimedia content (video and screenshots) are relative to the assets folder released to participants at submission time. The folder is available [here](https://data.statmt.org/wmt26/wmt26_genmt_blindset_multimodal_inputs.zip).
+
+## System submissions
+
+Each translation system has a corresponding JSONL file containing the following fields:
+
+- `doc_id`: The identifier of the corresponding test set entry in `data/wmt26-genmt.jsonl`.
+- `hypothesis`: The submitted translation;
+- `metadata`: A dictionary containing information such as the number of input and output tokens used to generate the translation, generation parameters values, and the generated reasoning trace. The contents of `metadata` may vary across systems.
 
 # Human Evaluation
 
