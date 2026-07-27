@@ -38,7 +38,10 @@ import utils
 os.makedirs("compiled", exist_ok=True)
 
 Model = str
+Langs = str
 Item = str
+
+data_global: dict[Model, dict[Langs, float]] = collections.defaultdict(lambda: collections.defaultdict(lambda: -100))
 
 for langs, data_local in data.items():
     if not data_local:
@@ -82,15 +85,31 @@ for langs, data_local in data.items():
             significant = p_value < 0.05 # type: ignore
         else:
             significant = False
-        data_typst.append([model, f"{statistics.mean(scores_clean):.1f}", "yes" if significant else "no"])
+        data_typst.append([model, statistics.mean(scores_clean), "yes" if significant else "no"])
 
     langs = langs.removesuffix(" v3")
     lang1, lang2 = [utils.LANG_TO_NAME[lang] for lang in langs.split("---")]
+    for model in data_model_item_avg:
+        data_global[model][f"{lang1}---{lang2}"] = float(statistics.mean([v for v in data_model_item_avg[model] if not np.isnan(v)]))
+
     print(lang1, lang2)
     typst.compile(
-        input="02-template.typ",
+        input="02-template-perlang.typ",
         sys_inputs={
             "data": json.dumps(data_typst),
             "langs": json.dumps([lang1, lang2])},
         output=f"compiled/results_{langs}.pdf"
     )
+
+data_global_flat = list(data_global.items())
+langs_all = list({lang for model in data_global for lang in data_global[model]})
+data_global_flat.sort(key=lambda x: statistics.mean([x[1][lang] for lang in langs_all]), reverse=True)
+# %%
+
+typst.compile(
+    input="02-template-global.typ",
+    sys_inputs={
+        "data": json.dumps(data_global_flat),
+    },
+    output=f"compiled/results_global.pdf"
+)

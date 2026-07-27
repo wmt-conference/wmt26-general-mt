@@ -4,9 +4,22 @@
 // LaTeX ACL font
 #set text(font: "New Computer Modern", size: 10pt)
 
+#let round(x, digits: 2) = {
+  if digits == 0 { return str(calc.round(x, digits: 0)) }
+  
+  let s = str(calc.round(x, digits: digits))
+  let parts = s.split(".")
+  
+  if parts.len() == 1 {
+    parts.push("")
+  }
+  
+  parts.at(0) + "." + parts.at(1) + "0" * (digits - parts.at(1).len())
+}
+
+
 #let colored_cell = x => {
-  let x_float = float(x)
-  table.cell(fill: rgb("#0000").mix((green, x_float/100*5), (red, 1 - x_float/100)), x)
+  table.cell(fill: rgb("#0000").mix((green, x/100*5), (red, 1 - x/100)), round(x, digits: 1))
 }
 
 #table(
