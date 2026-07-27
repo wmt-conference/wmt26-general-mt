@@ -103,8 +103,7 @@ for langs, data_local in data.items():
 
 data_global_flat = list(data_global.items())
 langs_all = list({lang for model in data_global for lang in data_global[model]})
-data_global_flat.sort(key=lambda x: statistics.mean([x[1][lang] for lang in langs_all]), reverse=True)
-# %%
+data_global_flat.sort(key=lambda x: statistics.mean([x[1][lang] for lang in langs_all if x[1][lang] != -100]), reverse=True)
 
 typst.compile(
     input="02-template-global.typ",
