@@ -28,6 +28,7 @@ import collections
 from typing import TypedDict, Optional
 import json
 from attention_checks import make_random_attn_checks
+from utils import LANG_TO_NAME
 import os
 os.chdir(os.path.dirname(__file__)+ "/..")
 os.makedirs("campaigns", exist_ok=True)
@@ -57,31 +58,6 @@ LANG_TO_TUTORIAL = {
     "eng_Latn---lld_Latn": "iten", # iten for en->Ladin
     "eng_Latn---sme_Latn": "seen",
     "eng_Latn---tha_Thai": "then",
-}
-
-LANG_TO_NAME = {
-    "eng_Latn": "English",
-    "ces_Latn": "Czech",
-    "deu_Latn": "German",
-    "ukr_Cyrl": "Ukrainian",
-    "vie_Latn": "Vietnamese",
-    "jpn_Jpan": "Japanese",
-    "hye_Armn": "Armenian",
-    "bel_Cyrl": "Belarusian",
-    "kaz_Cyrl": "Kazakh",
-    "rus_Cyrl": "Russian",
-    "arz_Arab": "Egyptian Arabic",
-    "zho_Hans": "Simplified Chinese",
-    "zho_Hant": "Traditional Chinese",
-    "zho_Hant_TW": "Traditional Chinese",
-    "ekk_Latn": "Estonian",
-    "isl_Latn": "Icelandic",
-    "ind_Latn": "Indonesian",
-    "kor_Hang": "Korean",
-    "lij_Latn": "Ladin",
-    "lld_Latn": "Ligurian",
-    "sme_Latn": "Northern Sami",
-    "tha_Thai": "Thai",
 }
 
 # index by 
