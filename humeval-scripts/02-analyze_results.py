@@ -88,7 +88,7 @@ for langs, data_local in data.items():
     lang1, lang2 = [utils.LANG_TO_NAME[lang] for lang in langs.split("---")]
     print(lang1, lang2)
     typst.compile(
-        input="/home/vilda/wmt26-general-mt/humeval-scripts/02-template.typ",
+        input="02-template.typ",
         sys_inputs={
             "data": json.dumps(data_typst),
             "langs": json.dumps([lang1, lang2])},
