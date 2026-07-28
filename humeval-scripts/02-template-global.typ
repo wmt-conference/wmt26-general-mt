@@ -19,9 +19,9 @@
 
 #let colored_cell = x => {
   if x == -100 {
-    return table.cell(fill: white, [])
+    return table.cell(fill: luma(200), [])
   }
-  table.cell(fill: rgb("#0000").mix((green, x/100*5), (red, (1 - x/100)*3)), round(x, digits: 1))
+  table.cell(fill: luma(300).mix((green, x/100*8), (red, (1 - x/100)*5)), round(x, digits: 1))
 }
 
 #let models = data.map(x => x.at(0))
@@ -38,7 +38,7 @@
   ..langs.map(x => {
     let (lang1, lang2) = x.split("---")
     lang2 = lang2.replace("Traditional", "Trad.").replace("Simplified", "Simp.")
-    strong(rotate(-90deg, reflow: true, box(width: 100pt, align(left, stack(lang1, sym.arrow + lang2, spacing: 4pt)))))}
+    strong(rotate(-90deg, reflow: true, box(width: 100pt, align(left, stack(lang1, sym.arrow + lang2, spacing: 3pt)))))}
   ),
   table.hline(),
   ..data.map(x => {
