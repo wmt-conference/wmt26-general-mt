@@ -2,13 +2,13 @@
 
 This repository contains the data for the WMT26 General Translation Shared Task testset as well as the corresponding collected human annotation and how to reproduce them.
 
-# Data
+# Testset and Translations
 
 ## Test data
 
 The `data/wmt26-genmt.jsonl` contains the test data in JSONL format. Each line includes the following fields:
 
-- `doc_id`: A unique identifier in the following format: `set_id_###_domain_###_src_lang_###_tgt_lang_###_doc_id`
+- `doc_id`: A unique identifier in the following format: `set_id_###_domain_###_src_lang_###_tgt_lang_###_doc_id`.
 - `domain`.
 - `src_lang`.
 - `tgt_lang`.
@@ -21,7 +21,7 @@ The `data/wmt26-genmt.jsonl` contains the test data in JSONL format. Each line i
 - `evaluation_instruction`: Domain-specific evaluation guidance provided to human evaluators.
 - `refs`: A dictionary containing all available human reference translations, or `{}` if the sample has no reference.
 
-Paths to multimedia content (video and screenshots) are relative to the assets folder released to participants at submission time. The folder is available [here](https://data.statmt.org/wmt26/wmt26_genmt_blindset_multimodal_inputs.zip).
+Paths to multimedia content (video and screenshots) are relative to the [assets folder](https://data.statmt.org/wmt26/wmt26_genmt_blindset_multimodal_inputs.zip) released to participants at submission time.
 
 ## System submissions
 
@@ -60,7 +60,7 @@ pearmut run
 
 ## Loading human evaluation with completed annotations
 
-You can also start the server with the existing annotations from WMT26
+You can also start the server with the existing annotations from WMT26:
 
 ```bash
 # install pearmut, potentially "pearmut==1.1.6"
