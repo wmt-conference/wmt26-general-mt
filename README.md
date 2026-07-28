@@ -33,7 +33,7 @@ Each translation system has a corresponding JSONL file containing the following 
 
 # Human Evaluation
 
-- The collected human annotations for WMT26 can be [found here as data](https://github.com/wmt-conference/wmt26-humeval/releases/tag/Data).
+- The collected human annotations for WMT26 can be [found here as data](https://github.com/wmt-conference/wmt26-general-mt/releases/tag/humeval).
 - Alternatively, you can browse the completed annotations [interactively](TODO) from the annotator perspective.
 
 The human evaluation at WMT is done with the [Pearmut tool](https://github.com/zouharvi/pearmut) which you'll need to have installed if you wish to replicate them.
@@ -50,8 +50,8 @@ You can start the annotation server without any completed annotations as follows
 pip install pearmut
 # download campaign sources and multimedia assets
 mkdir -p campaigns/ data/assets/
-wget https://github.com/wmt-conference/wmt26-humeval/releases/download/Data/campaign_sources.zip -O campaign_sources.zip; unzip campaign_source.zip -d campaigns/
-wget https://github.com/wmt-conference/wmt26-humeval/releases/download/Data/multimodal_inputs.zip -O multimodal_inputs.zip; unzip multimodal_inputs.zip -d data/assets/
+wget https://github.com/wmt-conference/wmt26-general-mt/releases/download/humeval/campaign_sources.zip -O campaign_sources.zip; unzip campaign_source.zip -d campaigns/
+wget https://github.com/wmt-conference/wmt26-general-mt/releases/download/humeval/multimodal_inputs.zip -O multimodal_inputs.zip; unzip multimodal_inputs.zip -d data/assets/
 # add campaigns
 pearmut add campaigns/*.json
 # run
@@ -67,8 +67,8 @@ You can also start the server with the existing annotations from WMT26
 pip install pearmut
 # download campaign sources and multimedia assets
 mkdir -p campaigns/ data/assets/
-wget https://github.com/wmt-conference/wmt26-humeval/releases/download/Data/campaign_sources.zip -O campaign_sources.zip; unzip campaign_source.zip -d campaigns/
-wget https://github.com/wmt-conference/wmt26-humeval/releases/download/Data/multimodal_inputs.zip -O multimodal_inputs.zip; unzip multimodal_inputs.zip -d data/assets/
+wget https://github.com/wmt-conference/wmt26-general-mt/releases/download/humeval/campaign_sources.zip -O campaign_sources.zip; unzip campaign_source.zip -d campaigns/
+wget https://github.com/wmt-conference/wmt26-general-mt/releases/download/humeval/multimodal_inputs.zip -O multimodal_inputs.zip; unzip multimodal_inputs.zip -d data/assets/
 wget TODO -O annotations.json
 wget TOOD -O progress.json
 # add campaigns and existing annotations
