@@ -17,8 +17,8 @@ LANG_TO_NAME = {
     "isl_Latn": "Icelandic",
     "ind_Latn": "Indonesian",
     "kor_Hang": "Korean",
-    "lij_Latn": "Ladin",
-    "lld_Latn": "Ligurian",
+    "lij_Latn": "Ligurian",
+    "lld_Latn": "Ladin",
     "sme_Latn": "Northern Sami",
     "tha_Thai": "Thai",
 }

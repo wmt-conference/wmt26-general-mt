@@ -28,7 +28,6 @@ import collections
 from typing import TypedDict, Optional
 import json
 from attention_checks import make_random_attn_checks
-from utils import LANG_TO_NAME
 import os
 os.chdir(os.path.dirname(__file__)+ "/..")
 os.makedirs("campaigns", exist_ok=True)

@@ -37,6 +37,7 @@
   strong[Model]+v(3pt),
   ..langs.map(x => {
     let (lang1, lang2) = x.split("---")
+    lang1 = lang1.replace("Traditional", "Trad.").replace("Simplified", "Simp.")
     lang2 = lang2.replace("Traditional", "Trad.").replace("Simplified", "Simp.")
     strong(rotate(-90deg, reflow: true, box(width: 100pt, align(left, stack(lang1, sym.arrow + lang2, spacing: 3pt)))))}
   ),
