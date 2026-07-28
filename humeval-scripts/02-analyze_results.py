@@ -104,7 +104,7 @@ for langs, data_local in data.items():
 data_global_flat = list(data_global.items())
 langs_all = list({lang for model in data_global for lang in data_global[model]})
 # sort by average score across all languages
-langs_all.sort(key=lambda x: statistics.mean([data_global[model][x] if data_global[model][x] != -100 else -100000 for model in data_global]), reverse=True)
+langs_all.sort(key=lambda x: statistics.mean([data_global[model][x] for model in data_global if data_global[model][x] != -100]), reverse=True)
 data_global_flat = [
     [model, {lang: data_global[model][lang] for lang in langs_all}]
     for model in data_global
