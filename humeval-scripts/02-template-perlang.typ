@@ -33,7 +33,7 @@
   table.hline(),
   ..data.map(x => {
     let out = (x.at(0), colored_cell(x.at(2)))
-    if x.at(2) == "yes" {
+    if x.at(3) == "yes" {
       out.push(table.hline(end: 2, stroke: (thickness: 0.5pt, dash: "solid")))
     }
     return out

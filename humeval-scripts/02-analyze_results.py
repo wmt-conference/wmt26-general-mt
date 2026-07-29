@@ -56,6 +56,7 @@ for langs, data_local in data.items():
                 data_model_item[model][item["item_id"]].append(ann_obj["score"])
 
     # ensure same order
+    # TODO: sorted( ?
     item_ids = sorted(list(item_ids))
     data_model_item_avg: dict[Model, list[float]] = {
         model: [
