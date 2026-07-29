@@ -28,7 +28,7 @@
 #let langs = data.filter(x => x.at(0) == "Gemini 3.1 Pro").at(0).at(1).keys()
 
 #table(
-  columns: (4.5cm,) + (0.9cm, ) * langs.len(),
+  columns: (4.5cm,) + (0.8cm, ) * langs.len(),
   inset: 1pt,
   rows: auto,
   align: (bottom+left,) + (horizon+right, ) * langs.len(),
@@ -36,10 +36,13 @@
   // table.hline(),
   strong[Model]+v(3pt),
   ..langs.map(x => {
-    let (lang1, lang2) = x.split("---")
-    lang1 = lang1.replace("Traditional", "Trad.").replace("Simplified", "Simp.")
-    lang2 = lang2.replace("Traditional", "Trad.").replace("Simplified", "Simp.")
-    strong(rotate(-90deg, reflow: true, box(width: 100pt, align(left, stack(lang1, sym.arrow + lang2, spacing: 3pt)))))}
+    let (lang1, lang2) = (
+      x
+      .replace("Traditional Chinese", "Chinese (Trad.)")
+      .replace("Simplified Chinese", "Chinese (Simp.)")
+      .split("---")
+    )
+    align(bottom+center, strong(rotate(-90deg, reflow: true, lang1 + sym.arrow + lang2)))}
   ),
   table.hline(),
   ..data.map(x => {

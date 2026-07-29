@@ -1,4 +1,4 @@
-#set page(height: auto, width: auto, margin: 0pt)
+#set page(height: 13cm, width: auto, margin: 0pt)
 #let data = json(bytes(sys.inputs.data))
 #let langs = json(bytes(sys.inputs.langs))
 // LaTeX ACL font
@@ -22,48 +22,33 @@
   table.cell(fill: luma(300).mix((green, x/100*8), (red, (1 - x/100)*5)), round(x, digits: 1))
 }
 
+
+#let (lang1, lang2) = (
+  langs
+      .replace("Traditional Chinese", "Chinese (Trad.)")
+      .replace("Simplified Chinese", "Chinese (Simp.)")
+      .split("---")
+)
+
 #table(
-  columns: (4.5cm, 0.8cm),
+  columns: (4.5cm, 0.8cm, 0.4cm),
   inset: 1pt,
-  rows: (1.3em, auto),
-  align: (horizon+left, horizon+right),
+  rows: (1.3em, 1em),
+  align: (horizon+left, horizon+right, horizon+right),
   stroke: none,
   table.hline(),
-  strong(langs.at(0) + sym.arrow + langs.at(1)), [*Score*],
+  strong(lang1 + sym.arrow + lang2+h(-1cm)), table.cell(colspan: 2)[*Score*],
   table.hline(),
   ..data.map(x => {
-    let out = (x.at(0), colored_cell(x.at(2)))
+    let out = (
+      x.at(0),
+      colored_cell(x.at(2)),
+      text(size: 5pt, [(#x.at(1).filter(y => y != -100).len())]),
+    )
     if x.at(3) == "yes" {
       out.push(table.hline(end: 2, stroke: (thickness: 0.5pt, dash: "solid")))
     }
     return out
-  }).flatten(),
-  table.hline(),
-)
-
-#pagebreak()
-
-// TODO: print progress
-
-#let items_len = data.at(0).at(1).len()
-
-#let colored_tick = x => {
-  if x == -100 {
-    return table.cell(fill: luma(200).mix(red), [])
-  } else {
-    return table.cell(fill: luma(200).mix(green), [])
-  }
-}
-
-#table(
-  columns: (4.5cm, ) + (10pt, ) * items_len,
-  inset: 1pt,
-  rows: (1.3em, auto),
-  align: (horizon+left, ) +  (horizon+right, ) * items_len,
-  stroke: none,
-  table.hline(),
-  ..data.map(x => {
-    (x.at(0), ) + x.at(1).map(y => colored_tick(y)).flatten()
   }).flatten(),
   table.hline(),
 )

@@ -35,7 +35,8 @@ import os
 import numpy as np
 import utils
 
-os.makedirs("compiled", exist_ok=True)
+os.makedirs("compiled/results_perlang/", exist_ok=True)
+os.makedirs("compiled/results_progress/", exist_ok=True)
 
 Model = str
 Langs = str
@@ -43,6 +44,7 @@ Item = str
 
 data_global: dict[Model, dict[Langs, float]] = collections.defaultdict(lambda: collections.defaultdict(lambda: -100))
 
+langs_i_printed = 0
 for langs, data_local in data.items():
     if not data_local:
         continue
@@ -77,14 +79,18 @@ for langs, data_local in data.items():
     for model_i, (model, scores) in enumerate(data_models_flat):
         scores_nonan = [v for v in scores if not np.isnan(v)]
         scores_clean = [v if not np.isnan(v) else -100 for v in scores]
+        # make it significant IFF it's beter than all subsequent models
         if model_i < len(data_models_flat) - 1:
             # t-test against next model
-            _, p_value = scipy.stats.ttest_rel(
-                data_models_flat[model_i][1],
-                data_models_flat[model_i+1][1],
-                nan_policy="omit",
-            )
-            significant = p_value < 0.05 # type: ignore
+            p_values = [
+                scipy.stats.ttest_rel(
+                    data_models_flat[model_i][1],
+                    data_models_flat[model_j][1],
+                    nan_policy="omit",
+                )[1]
+                for model_j in range(model_i + 1, len(data_models_flat))
+            ]
+            significant = all(p_value < 0.05 for p_value in p_values)
         else:
             significant = False
         data_typst.append([model, scores_clean, statistics.mean(scores_nonan), "yes" if significant else "no"])
@@ -94,14 +100,29 @@ for langs, data_local in data.items():
     for model in data_model_item_avg:
         data_global[model][f"{lang1}---{lang2}"] = float(statistics.mean([v for v in data_model_item_avg[model] if not np.isnan(v)]))
 
-    # TODO: add number of annotated docs / segments to each model
     typst.compile(
         input="02-template-perlang.typ",
         sys_inputs={
             "data": json.dumps(data_typst),
-            "langs": json.dumps([lang1, lang2])},
-        output=f"compiled/results_{langs}.pdf"
+            "langs": json.dumps(f"{lang1}---{lang2}")},
+        output=f"compiled/results_perlang/{langs}.pdf"
     )
+    typst.compile(
+        input="02-template-progress.typ",
+        sys_inputs={
+            "data": json.dumps(data_typst),
+            "langs": json.dumps(f"{lang1}---{lang2}")},
+        output=f"compiled/results_progress/{langs}.pdf"
+    )
+
+    if langs_i_printed % 3 == 0:
+        print("\n\\noindent")
+    print(
+        f"\\includegraphics[width=5cm]{{figures_new/results_perlang/{langs}.pdf}}",
+        end=(r"\hfill" if langs_i_printed % 3 != 2 else "") + "\n"
+    )
+
+    langs_i_printed += 1
 
 data_global_flat = list(data_global.items())
 langs_all = list({lang for model in data_global for lang in data_global[model]})
