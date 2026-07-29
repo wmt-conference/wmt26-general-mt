@@ -56,7 +56,7 @@ for langs, data_local in data.items():
                 data_model_item[model][item["item_id"]].append(ann_obj["score"])
 
     # ensure same order
-    item_ids = list(item_ids)
+    item_ids = sorted(list(item_ids))
     data_model_item_avg: dict[Model, list[float]] = {
         model: [
             (
@@ -74,7 +74,8 @@ for langs, data_local in data.items():
 
     data_typst = []
     for model_i, (model, scores) in enumerate(data_models_flat):
-        scores_clean = [v for v in scores if not np.isnan(v)]
+        scores_nonan = [v for v in scores if not np.isnan(v)]
+        scores_clean = [v if not np.isnan(v) else -100 for v in scores]
         if model_i < len(data_models_flat) - 1:
             # t-test against next model
             _, p_value = scipy.stats.ttest_rel(
@@ -85,14 +86,14 @@ for langs, data_local in data.items():
             significant = p_value < 0.05 # type: ignore
         else:
             significant = False
-        data_typst.append([model, statistics.mean(scores_clean), "yes" if significant else "no"])
+        data_typst.append([model, scores_clean, statistics.mean(scores_nonan), "yes" if significant else "no"])
 
     langs = langs.removesuffix(" v3")
     lang1, lang2 = [utils.LANG_TO_NAME[lang] for lang in langs.split("---")]
     for model in data_model_item_avg:
         data_global[model][f"{lang1}---{lang2}"] = float(statistics.mean([v for v in data_model_item_avg[model] if not np.isnan(v)]))
 
-    print(lang1, lang2)
+    # TODO: add number of annotated docs / segments to each model
     typst.compile(
         input="02-template-perlang.typ",
         sys_inputs={
