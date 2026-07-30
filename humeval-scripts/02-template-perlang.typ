@@ -1,4 +1,4 @@
-#set page(height: 13cm, width: auto, margin: 0pt)
+#set page(height: 12cm, width: auto, margin: 0pt)
 #let data = json(bytes(sys.inputs.data))
 #let langs = json(bytes(sys.inputs.langs))
 // LaTeX ACL font
@@ -45,8 +45,16 @@
       colored_cell(x.at(2)),
       text(size: 5pt, [(#x.at(1).filter(y => y != -100).len())]),
     )
-    if x.at(3) == "yes" {
-      out.push(table.hline(end: 2, stroke: (thickness: 0.5pt, dash: "solid")))
+    if x.at(3) == "yes_cluster" {
+      out.push(table.hline(
+        end: 1,
+        stroke: (thickness: 0.5pt, paint: luma(0), dash: (110pt, 5000pt))
+      ))
+    } else if x.at(3) == "yes_local" {
+      out.push(table.hline(
+        end: 1,
+        stroke: (thickness: 0.5pt, paint: luma(150), dash: (60pt, 5000pt))
+      ))
     }
     return out
   }).flatten(),

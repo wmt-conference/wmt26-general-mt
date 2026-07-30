@@ -42,6 +42,11 @@ Model = str
 Langs = str
 Item = str
 
+# kill all warnings
+import warnings
+warnings.filterwarnings("ignore")
+
+
 data_global: dict[Model, dict[Langs, float]] = collections.defaultdict(lambda: collections.defaultdict(lambda: -100))
 
 langs_i_printed = 0
@@ -81,19 +86,39 @@ for langs, data_local in data.items():
         scores_clean = [v if not np.isnan(v) else -100 for v in scores]
         # make it significant IFF it's beter than all subsequent models
         if model_i < len(data_models_flat) - 1:
-            # t-test against next model
-            p_values = [
+            # check if we can make a cluster here
+
+            # check that the current model is significantly better than all subsequent models
+            significance_betterthan = [
                 scipy.stats.ttest_rel(
                     data_models_flat[model_i][1],
                     data_models_flat[model_j][1],
                     nan_policy="omit",
-                )[1]
+                )[1] < 0.05
                 for model_j in range(model_i + 1, len(data_models_flat))
             ]
-            significant = all(p_value < 0.05 for p_value in p_values)
+            # check that the next model is significantly worse than all previous models
+            significance_worsethan = [
+                scipy.stats.ttest_rel(
+                    data_models_flat[model_j][1],
+                    data_models_flat[model_i+1][1],
+                    nan_policy="omit",
+                )[1] < 0.05
+                for model_j in range(0, model_i + 1)
+            ]
+            significant = all(significance_betterthan) and all(significance_worsethan)
         else:
             significant = False
-        data_typst.append([model, scores_clean, statistics.mean(scores_nonan), "yes" if significant else "no"])
+        data_typst.append([
+            model,
+            scores_clean,
+            statistics.mean(scores_nonan),
+            (
+                "yes_cluster" if significant else
+                "yes_local" if model_i < len(data_models_flat) -1 and significance_betterthan[0] # type: ignore
+                else "nothing"
+            )
+        ])
 
     langs = langs.removesuffix(" v3")
     lang1, lang2 = [utils.LANG_TO_NAME[lang] for lang in langs.split("---")]
