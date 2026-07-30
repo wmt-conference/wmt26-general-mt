@@ -22,6 +22,13 @@
   table.cell(fill: luma(300).mix((green, x/100*8), (red, (1 - x/100)*5)), round(x, digits: 1))
 }
 
+#let render_model = x => {
+  if x.contains(" OPEN") {
+    return x.replace(" OPEN", "") + " " + sym.circle.filled
+  } else {
+    return x
+  }
+}
 
 #let (lang1, lang2) = (
   langs
@@ -41,7 +48,7 @@
   table.hline(),
   ..data.map(x => {
     let out = (
-      x.at(0),
+      render_model(x.at(0)),
       colored_cell(x.at(2)),
       text(size: 5pt, [(#x.at(1).filter(y => y != -100).len())]),
     )

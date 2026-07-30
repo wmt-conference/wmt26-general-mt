@@ -1,8 +1,11 @@
 # %%
 
 import json
+import os
 
-with open("data/annotations.json", "r") as f:
+os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/..")
+
+with open("humeval/data/annotations.json", "r") as f:
     data = json.load(f)
 
 # process __RESET__ actions and tutorial items
@@ -35,8 +38,8 @@ import os
 import numpy as np
 import utils
 
-os.makedirs("compiled/results_perlang/", exist_ok=True)
-os.makedirs("compiled/results_progress/", exist_ok=True)
+os.makedirs("humeval/compiled/results_perlang/", exist_ok=True)
+os.makedirs("humeval/compiled/results_progress/", exist_ok=True)
 
 Model = str
 Langs = str
@@ -45,6 +48,13 @@ Item = str
 # kill all warnings
 import warnings
 warnings.filterwarnings("ignore")
+
+with open("wmt26_participants.jsonl", "r") as f:
+    participants = [json.loads(line) for line in f]
+    participants_open = {
+        x["System name (short, to be used in the overview paper)"]: x["Track"] == "Constrained open weights track (max 20B parameters; I will relase the model weights)"
+        for x in participants
+    }
 
 
 data_global: dict[Model, dict[Langs, float]] = collections.defaultdict(lambda: collections.defaultdict(lambda: -100))
@@ -60,6 +70,7 @@ for langs, data_local in data.items():
         for item_ann, item in zip(line["annotation"], line["item"]):
             item_ids.add(item["item_id"])
             for model, ann_obj in item_ann.items():
+                model = model + (" OPEN" if participants_open.get(model, False) else "")
                 data_model_item[model][item["item_id"]].append(ann_obj["score"])
 
     # ensure same order
@@ -126,18 +137,18 @@ for langs, data_local in data.items():
         data_global[model][f"{lang1}---{lang2}"] = float(statistics.mean([v for v in data_model_item_avg[model] if not np.isnan(v)]))
 
     typst.compile(
-        input="02-template-perlang.typ",
+        input="humeval/02-template-perlang.typ",
         sys_inputs={
             "data": json.dumps(data_typst),
             "langs": json.dumps(f"{lang1}---{lang2}")},
-        output=f"compiled/results_perlang/{langs}.pdf"
+        output=f"humeval/compiled/results_perlang/{langs}.pdf"
     )
     typst.compile(
-        input="02-template-progress.typ",
+        input="humeval/02-template-progress.typ",
         sys_inputs={
             "data": json.dumps(data_typst),
             "langs": json.dumps(f"{lang1}---{lang2}")},
-        output=f"compiled/results_progress/{langs}.pdf"
+        output=f"humeval/compiled/results_progress/{langs}.pdf"
     )
 
     if langs_i_printed % 3 == 0:
@@ -154,7 +165,10 @@ langs_all = list({lang for model in data_global for lang in data_global[model]})
 # sort by average score across all languages
 langs_all.sort(key=lambda x: statistics.mean([data_global[model][x] for model in data_global if data_global[model][x] != -100]), reverse=True)
 data_global_flat = [
-    [model, {lang: data_global[model][lang] for lang in langs_all}]
+    [
+        model,
+        {lang: data_global[model][lang] for lang in langs_all}
+    ]
     for model in data_global
 ]
 
@@ -175,9 +189,9 @@ model_average_rank = {
 data_global_flat.sort(key=lambda x: model_average_rank[x[0]])
 
 typst.compile(
-    input="02-template-global.typ",
+    input="humeval/02-template-global.typ",
     sys_inputs={
         "data": json.dumps(data_global_flat),
     },
-    output=f"compiled/results_global.pdf"
+    output=f"humeval/compiled/results_global.pdf"
 )
