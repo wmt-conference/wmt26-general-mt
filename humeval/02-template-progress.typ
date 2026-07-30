@@ -18,7 +18,7 @@
 }
 
 
-#let items_len = data.at(0).at(1).len()
+#let items_len = data.at(0).scores_doc.len()
 #let colored_tick = x => {
   if x == -100 {
     return table.cell(fill: luma(200).mix(red), [])
@@ -35,7 +35,7 @@
   stroke: none,
   table.hline(),
   ..data.map(x => {
-    (x.at(0), ) + x.at(1).map(y => colored_tick(y)).flatten()
+    (x.model, ) + x.scores_doc.map(y => colored_tick(y)).flatten()
   }).flatten(),
   table.hline(),
 )

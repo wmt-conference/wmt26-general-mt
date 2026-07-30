@@ -1,6 +1,14 @@
 # %%
 
+import collections
+import statistics
+import scipy.stats
+import typst
 import json
+import os
+import numpy as np
+import json
+import utils
 import os
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/..")
@@ -27,16 +35,6 @@ for langs, data_local in data.items():
             data_new.append(line)
     data[langs] = data_new
 
-# %%
-
-import collections
-import statistics
-import scipy.stats
-import typst
-import json
-import os
-import numpy as np
-import utils
 
 os.makedirs("humeval/compiled/results_perlang/", exist_ok=True)
 os.makedirs("humeval/compiled/results_progress/", exist_ok=True)
@@ -44,6 +42,7 @@ os.makedirs("humeval/compiled/results_progress/", exist_ok=True)
 Model = str
 Langs = str
 Item = str
+Doc = str
 
 # kill all warnings
 import warnings
@@ -73,10 +72,12 @@ for langs, data_local in data.items():
                 model = model + (" OPEN" if participants_open.get(model, False) else "")
                 data_model_item[model][item["item_id"]].append(ann_obj["score"])
 
+    # sort by number of annotated models
+    doc_ids = set()
+
     # ensure same order
     item_ids = list(item_ids)
-    # sort by number of annotated models
-    item_ids.sort(key=lambda x: sum(1 for model in data_model_item if x in data_model_item[model]), reverse=True)
+    # average multiple annotations per item
     data_model_item_avg: dict[Model, list[float]] = {
         model: [
             (
@@ -88,6 +89,19 @@ for langs, data_local in data.items():
         for model in data_model_item
     }
 
+
+    data_model_doc: dict[Model, dict[Doc, list[float]]] = collections.defaultdict(lambda: collections.defaultdict(lambda: []))
+    for model, item_scores in data_model_item_avg.items():
+        for item_i, item_id in enumerate(item_ids):
+            doc_id = item_id.rsplit("_###_", 1)[0]
+            doc_ids.add(doc_id)
+            if not np.isnan(item_scores[item_i]):
+                data_model_doc[model][doc_id].append(item_scores[item_i])
+
+    doc_ids = list(doc_ids)
+    doc_ids.sort(key=lambda x: sum(1 for model in data_model_doc if x in data_model_doc[model]), reverse=True)
+    
+
     data_models_flat = list(data_model_item_avg.items())
     # sort from top
     data_models_flat.sort(key=lambda x: statistics.mean([v for v in x[1] if not np.isnan(v)]), reverse=True)
@@ -95,7 +109,11 @@ for langs, data_local in data.items():
     data_typst = []
     for model_i, (model, scores) in enumerate(data_models_flat):
         scores_nonan = [v for v in scores if not np.isnan(v)]
-        scores_clean = [v if not np.isnan(v) else -100 for v in scores]
+        scores_seg = [v if not np.isnan(v) else -100 for v in scores]
+        scores_doc = [
+            statistics.mean(data_model_doc[model][doc_id]) if doc_id in data_model_doc[model] else -100
+            for doc_id in doc_ids
+        ]
         # make it significant IFF it's beter than all subsequent models
         if model_i < len(data_models_flat) - 1:
             # check if we can make a cluster here
@@ -121,16 +139,17 @@ for langs, data_local in data.items():
             significant = all(significance_betterthan) and all(significance_worsethan)
         else:
             significant = False
-        data_typst.append([
-            model,
-            scores_clean,
-            statistics.mean(scores_nonan),
-            (
+        data_typst.append({
+            "model": model,
+            "scores_seg": scores_seg,
+            "scores_doc": scores_doc,
+            "scores_mean": statistics.mean(scores_nonan),
+            "cluster": (
                 "yes_cluster" if significant else
                 "yes_local" if model_i < len(data_models_flat) -1 and significance_betterthan[0] # type: ignore
                 else "nothing"
             )
-        ])
+        })
 
     langs = langs.removesuffix(" v3")
     lang1, lang2 = [utils.LANG_TO_NAME[lang] for lang in langs.split("---")]

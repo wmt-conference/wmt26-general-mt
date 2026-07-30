@@ -48,16 +48,16 @@
   table.hline(),
   ..data.map(x => {
     let out = (
-      render_model(x.at(0)),
-      colored_cell(x.at(2)),
-      text(size: 5pt, [(#x.at(1).filter(y => y != -100).len())]),
+      render_model(x.model),
+      colored_cell(x.scores_mean),
+      text(size: 5pt, [(#x.scores_doc.filter(y => y != -100).len())]),
     )
-    if x.at(3) == "yes_cluster" {
+    if x.cluster == "yes_cluster" {
       out.push(table.hline(
         end: 1,
         stroke: (thickness: 0.5pt, paint: luma(0), dash: (110pt, 5000pt))
       ))
-    } else if x.at(3) == "yes_local" {
+    } else if x.cluster == "yes_local" {
       out.push(table.hline(
         end: 1,
         stroke: (thickness: 0.5pt, paint: luma(150), dash: (60pt, 5000pt))
