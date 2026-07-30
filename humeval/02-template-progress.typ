@@ -18,6 +18,14 @@
 }
 
 
+#let render_model = x => {
+  if x.contains(" OPEN") {
+    return x.replace(" OPEN", "") + " " + sym.circle.filled
+  } else {
+    return x
+  }
+}
+
 #let items_len = data.at(0).scores_doc.len()
 #let colored_tick = x => {
   if x == -100 {
@@ -35,7 +43,7 @@
   stroke: none,
   table.hline(),
   ..data.map(x => {
-    (x.model, ) + x.scores_doc.map(y => colored_tick(y)).flatten()
+    (render_model(x.model), ) + x.scores_doc.map(y => colored_tick(y)).flatten()
   }).flatten(),
   table.hline(),
 )
