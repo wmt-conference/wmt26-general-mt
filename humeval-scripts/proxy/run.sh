@@ -1,7 +1,7 @@
 # various management scripts
 
 rsync campaigns/v3/*.json wmt-pearmut:campaigns/v3/ -avz
-rsync wmt-pearmut:campaigns/v3/ campaigns/v3_upstream/ -avz
+rsync wmt-pearmut:data/campaigns/v3/ campaigns/v3_upstream/ -avz
 
 rsync wmt26-generalmt-internal/blindset/multimodal_inputs/ wmt-pearmut:data/assets/multimodal_inputs/ -avz
 cp -r wmt26-generalmt-internal/blindset/multimodal_inputs/ data/assets/multimodal_inputs/

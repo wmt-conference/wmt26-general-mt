@@ -350,8 +350,8 @@ for (lang1, lang2), data_lang in data_all.items():
                 else 30
             ),
             "docs_per_user": (
-                200 if lang2 in {"hye_Armn", "bel_Cyrl", "kaz_Cyrl"}
-                else 30 if f"{lang1}---{lang2}" in {"eng_Latn---arz_Arab", "eng_Latn---rus_Cyrl", "eng_Latn---ukr_Cyrl"}
+                50 if lang2 in {"hye_Armn", "bel_Cyrl", "kaz_Cyrl"}
+                else 20 if f"{lang1}---{lang2}" in {"eng_Latn---arz_Arab", "eng_Latn---rus_Cyrl", "eng_Latn---ukr_Cyrl"}
                 else None
             ),
             "show_progress": False,
