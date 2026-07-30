@@ -74,8 +74,9 @@ for langs, data_local in data.items():
                 data_model_item[model][item["item_id"]].append(ann_obj["score"])
 
     # ensure same order
-    # TODO: sorted( ?
-    item_ids = sorted(list(item_ids))
+    item_ids = list(item_ids)
+    # sort by number of annotated models
+    item_ids.sort(key=lambda x: sum(1 for model in data_model_item if x in data_model_item[model]), reverse=True)
     data_model_item_avg: dict[Model, list[float]] = {
         model: [
             (

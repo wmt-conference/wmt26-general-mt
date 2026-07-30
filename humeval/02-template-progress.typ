@@ -30,7 +30,7 @@
 #table(
   columns: (4.5cm, ) + (10pt, ) * items_len,
   inset: 1pt,
-  rows: (1.3em, auto),
+  rows: auto,
   align: (horizon+left, ) +  (horizon+right, ) * items_len,
   stroke: none,
   table.hline(),
