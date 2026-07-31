@@ -50,7 +50,7 @@
     let out = (
       render_model(x.model),
       colored_cell(x.scores_mean),
-      text(size: 5pt, [(#x.scores_doc.filter(y => y != -100).len())]),
+      text(size: 5pt, [(#x.scores_seg.filter(y => y != -100).len())]),
     )
     if x.cluster == "yes_cluster" {
       out.push(table.hline(
