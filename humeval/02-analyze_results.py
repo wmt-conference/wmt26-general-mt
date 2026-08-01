@@ -199,7 +199,10 @@ model_average_rank = {
             sum(
                 1 for other_model in data_global
                 if data_global[other_model][lang] > data_global[model][lang]
-            )
+            ) / len([
+                other_model for other_model in data_global
+                if data_global[other_model][lang] != -100
+            ])
             for lang in langs_all
             if data_global[model][lang] != -100
         ]
