@@ -10,6 +10,7 @@ import numpy as np
 import json
 import utils
 import os
+import functools
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/..")
 
@@ -38,6 +39,15 @@ for langs, data_local in data.items():
 
 os.makedirs("humeval/compiled/results_perlang/", exist_ok=True)
 os.makedirs("humeval/compiled/results_progress/", exist_ok=True)
+
+@functools.lru_cache(maxsize=None)
+def is_significantly_better(
+    scores_a: list[float | None],
+    scores_b: list[float | None]
+) -> bool:
+    """Check if scores_a is significantly better than scores_b using a paired t-test."""
+    t_stat, p_value = scipy.stats.ttest_rel(scores_a, scores_b, nan_policy="omit")
+    return p_value < 0.05
 
 Model = str
 Langs = str
@@ -118,35 +128,31 @@ for langs, data_local in data.items():
         if model_i < len(data_models_flat) - 1:
             # check if we can make a cluster here
 
+            significant_locally = is_significantly_better(
+                tuple(data_models_flat[model_i][1]),
+                tuple(data_models_flat[model_i + 1][1]),
+            )
             # check that the current model is significantly better than all subsequent models
-            significance_betterthan = [
-                scipy.stats.ttest_rel(
-                    data_models_flat[model_i][1],
-                    data_models_flat[model_j][1],
-                    nan_policy="omit",
-                )[1] < 0.05
-                for model_j in range(model_i + 1, len(data_models_flat))
-            ]
-            # check that the next model is significantly worse than all previous models
-            significance_worsethan = [
-                scipy.stats.ttest_rel(
-                    data_models_flat[model_j][1],
-                    data_models_flat[model_i+1][1],
-                    nan_policy="omit",
-                )[1] < 0.05
-                for model_j in range(0, model_i + 1)
-            ]
-            significant = all(significance_betterthan) and all(significance_worsethan)
-        else:
-            significant = False
+            significant_globally = (
+                all(
+                    is_significantly_better(
+                        tuple(data_models_flat[model_up][1]),
+                        tuple(data_models_flat[model_down][1]),
+                    )
+                    for model_up in range(0, model_i+1)
+                    for model_down in range(model_i + 1, len(data_models_flat))
+                )
+            )
+
         data_typst.append({
             "model": model,
             "scores_seg": scores_seg,
             "scores_doc": scores_doc,
             "scores_mean": statistics.mean(scores_nonan),
             "cluster": (
-                "yes_cluster" if significant else
-                "yes_local" if model_i < len(data_models_flat) -1 and significance_betterthan[0] # type: ignore
+                "nothing" if model_i == len(data_models_flat) - 1 else
+                "yes_cluster" if significant_globally else # type: ignore
+                "yes_local" if significant_locally # type: ignore
                 else "nothing"
             )
         })

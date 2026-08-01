@@ -38,19 +38,25 @@
 )
 
 #table(
-  columns: (4.5cm, 0.8cm, 0.4cm),
+  columns: (4.5cm, 0.8cm, 0.3cm),
   inset: 1pt,
   rows: (1.3em, 1em),
   align: (horizon+left, horizon+right, horizon+right),
   stroke: none,
   table.hline(),
-  strong(lang1 + sym.arrow + lang2+h(-1cm)), table.cell(colspan: 2)[*Score*],
+  strong(lang1 + sym.arrow + lang2+h(-1cm)), table.cell(colspan: 2)[],
   table.hline(),
   ..data.map(x => {
     let out = (
       render_model(x.model),
       colored_cell(x.scores_mean),
-      text(size: 5pt, [(#x.scores_seg.filter(y => y != -100).len())]),
+      text(size: 5pt, 
+        str(x.scores_doc.filter(y => y != -100).len()),
+      // stack(
+      //   str(x.scores_seg.filter(y => y != -100).len()),
+      //   spacing: 2pt,
+      // )
+      ),
     )
     if x.cluster == "yes_cluster" {
       out.push(table.hline(
