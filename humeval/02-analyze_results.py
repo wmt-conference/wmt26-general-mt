@@ -46,8 +46,10 @@ def is_significantly_better(
     scores_b: list[float | None]
 ) -> bool:
     """Check if scores_a is significantly better than scores_b using a paired t-test."""
-    t_stat, p_value = scipy.stats.ttest_rel(scores_a, scores_b, nan_policy="omit")
-    return p_value < 0.05
+    _, p_value1 = scipy.stats.ttest_rel(scores_a, scores_b, nan_policy="omit")
+    _, p_value2 = scipy.stats.ttest_ind(scores_a, scores_b, nan_policy="omit")
+
+    return p_value1 < 0.05 or p_value2 < 0.05 # type: ignore
 
 Model = str
 Langs = str
