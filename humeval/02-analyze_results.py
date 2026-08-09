@@ -46,8 +46,23 @@ def is_significantly_better(
     scores_b: list[float | None]
 ) -> bool:
     """Check if scores_a is significantly better than scores_b using a paired t-test."""
-    _, p_value1 = scipy.stats.ttest_rel(scores_a, scores_b, nan_policy="omit")
-    _, p_value2 = scipy.stats.ttest_ind(scores_a, scores_b, nan_policy="omit")
+    try:
+        _, p_value1 = scipy.stats.wilcoxon(scores_a, scores_b, nan_policy="omit", alternative="greater")
+    except ValueError:
+        p_value1 = 1.0
+
+    try:
+        _, p_value2 = scipy.stats.ttest_ind(scores_a, scores_b, nan_policy="omit", alternative="greater")
+    except ValueError:
+        p_value2 = 1.0
+
+    #     try:
+    #     _, p_value3 = scipy.stats.wilcoxon(scores_a, scores_b, nan_policy="omit")
+    #     return p_value3 < 0.05
+    # except ValueError:
+    #     return False
+    # TODO: have our own statistical testing Bayesian model
+    # that takes item difficulty into account?
 
     return p_value1 < 0.05 or p_value2 < 0.05 # type: ignore
 
@@ -71,6 +86,7 @@ with open("wmt26_participants.jsonl", "r") as f:
 data_global: dict[Model, dict[Langs, float]] = collections.defaultdict(lambda: collections.defaultdict(lambda: -100))
 
 langs_i_printed = 0
+significance_counter = collections.defaultdict(list)
 for langs, data_local in data.items():
     if not data_local:
         continue
@@ -146,6 +162,10 @@ for langs, data_local in data.items():
                 )
             )
 
+        if model_i != len(data_models_flat) - 1:
+            significance_counter["local"].append(int(significant_locally)) # type: ignore
+            significance_counter["global"].append(int(significant_globally)) # type: ignore
+
         data_typst.append({
             "model": model,
             "scores_seg": scores_seg,
@@ -187,6 +207,10 @@ for langs, data_local in data.items():
     )
 
     langs_i_printed += 1
+
+
+print(f"local  {statistics.mean(significance_counter['local']):.2f}, {sum(significance_counter['local'])}")
+print(f"global {statistics.mean(significance_counter['global']):.2f}, {sum(significance_counter['global'])}")
 
 data_global_flat = list(data_global.items())
 langs_all = list({lang for model in data_global for lang in data_global[model]})
