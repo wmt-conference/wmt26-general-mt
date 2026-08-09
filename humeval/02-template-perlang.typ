@@ -45,7 +45,7 @@
   stroke: none,
   table.hline(),
   strong(lang1 + sym.arrow + lang2+h(-1cm)),
-  if lang2 != "Japanese" { align(left, text(size: 5pt)[*Score*])} else {},
+  if (lang1+lang2).len() < 20 { align(left, text(size: 5pt)[*Score*])} else {},
   text(size: 5pt)[*Docs*],
   table.hline(),
   ..data.map(x => {

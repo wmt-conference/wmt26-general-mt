@@ -47,7 +47,7 @@ def is_significantly_better(
 ) -> bool:
     """Check if scores_a is significantly better than scores_b using a paired t-test."""
     try:
-        _, p_value1 = scipy.stats.wilcoxon(scores_a, scores_b, nan_policy="omit", alternative="greater")
+        _, p_value1 = scipy.stats.wilcoxon(scores_a, scores_b, nan_policy="omit", alternative="greater") # type: ignore
     except ValueError:
         p_value1 = 1.0
 
