@@ -44,7 +44,9 @@
   align: (horizon+left, horizon+right, horizon+right),
   stroke: none,
   table.hline(),
-  strong(lang1 + sym.arrow + lang2+h(-1cm)), table.cell(colspan: 2)[],
+  strong(lang1 + sym.arrow + lang2+h(-1cm)),
+  if lang2 != "Japanese" { align(left, text(size: 5pt)[*Score*])} else {},
+  text(size: 5pt)[*Docs*],
   table.hline(),
   ..data.map(x => {
     let out = (
