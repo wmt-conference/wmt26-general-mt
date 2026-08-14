@@ -10,8 +10,10 @@ import numpy as np
 import json
 import utils
 import os
+import math
 import functools
-
+import multiprocessing
+ 
 os.chdir(os.path.dirname(__file__) + "/..")
 
 with open("humeval/data/annotations_filtered.json", "r") as f:
@@ -21,11 +23,10 @@ os.makedirs("humeval/compiled/results_perlang/", exist_ok=True)
 os.makedirs("humeval/compiled/results_progress/", exist_ok=True)
 
 @functools.lru_cache(maxsize=None)
-def is_significantly_better(
-    scores_a: list[float | None],
-    scores_b: list[float | None]
+def is_significantly_better_parametric(
+    scores_a: tuple[float | None, ...],
+    scores_b: tuple[float | None, ...]
 ) -> bool:
-    """Check if scores_a is significantly better than scores_b using a paired t-test."""
     try:
         _, p_value1 = scipy.stats.wilcoxon(scores_a, scores_b, nan_policy="omit", alternative="greater") # type: ignore
     except ValueError:
@@ -37,6 +38,55 @@ def is_significantly_better(
         p_value2 = 1.0
 
     return p_value1 < 0.05 or p_value2 < 0.05 # type: ignore
+
+@functools.lru_cache(maxsize=None)
+def is_significantly_better(
+    scores_a: tuple[float | None, ...],
+    scores_b: tuple[float | None, ...],
+    n_resamples: int = 100
+) -> bool:
+    pairs = [(a, b) for a, b in zip(scores_a, scores_b)
+             if a is not None and b is not None and not math.isnan(a) and not math.isnan(b)]
+    diffs = np.array([a - b for a, b in pairs])
+    
+    valid_a = np.array([a for a in scores_a if a is not None and not math.isnan(a)])
+    valid_b = np.array([b for b in scores_b if b is not None and not math.isnan(b)])
+
+    if len(diffs) >= 2 and np.any(diffs > 0):
+        try:
+            res_paired = scipy.stats.bootstrap(
+                (diffs,),
+                statistic=np.mean,
+                vectorized=True,
+                n_resamples=n_resamples,
+                confidence_level=0.95, 
+                alternative="greater"
+            )
+            if res_paired.confidence_interval.low > 0:
+                return True
+        except ValueError:
+            pass
+
+    if len(valid_a) >= 2 and len(valid_b) >= 2:
+        def ind_mean_diff(x, y, axis=-1):
+            return np.mean(x, axis=axis) - np.mean(y, axis=axis)
+            
+        try:
+            res_ind = scipy.stats.bootstrap(
+                (valid_a, valid_b),
+                statistic=ind_mean_diff,
+                vectorized=True,
+                n_resamples=n_resamples,
+                confidence_level=0.95,
+                alternative="greater"
+            )
+            if res_ind.confidence_interval.low > 0:
+                return True
+        except ValueError:
+            pass
+
+    return False
+
 
 Model = str
 Langs = str
@@ -56,12 +106,16 @@ with open("wmt26_participants.jsonl", "r") as f:
 
 
 data_global: dict[Model, dict[Langs, float]] = collections.defaultdict(lambda: collections.defaultdict(lambda: -100))
+data_for_perlang = []
 
 langs_i_printed = 0
 significance_counter = collections.defaultdict(list)
 for langs, data_local in data.items():
     if not data_local:
         continue
+
+    langs = langs.removesuffix(" v3")
+    lang1, lang2 = [utils.LANG_TO_NAME[lang] for lang in langs.split("---")]
 
     data_model_item: dict[Model, dict[Item, list[float]]] = collections.defaultdict(lambda: collections.defaultdict(lambda: []))
     item_ids = set()
@@ -74,7 +128,6 @@ for langs, data_local in data.items():
 
     # sort by number of annotated models
     doc_ids = set()
-
     # ensure same order
     item_ids = list(item_ids)
     # average multiple annotations per item
@@ -89,6 +142,9 @@ for langs, data_local in data.items():
         for model in data_model_item
     }
 
+    for model in data_model_item_avg:
+        data_global[model][f"{lang1}---{lang2}"] = float(statistics.mean([v for v in data_model_item_avg[model] if not np.isnan(v)]))
+
 
     data_model_doc: dict[Model, dict[Doc, list[float]]] = collections.defaultdict(lambda: collections.defaultdict(lambda: []))
     for model, item_scores in data_model_item_avg.items():
@@ -100,11 +156,26 @@ for langs, data_local in data.items():
 
     doc_ids = list(doc_ids)
     doc_ids.sort(key=lambda x: sum(1 for model in data_model_doc if x in data_model_doc[model]), reverse=True)
-    
 
     data_models_flat = list(data_model_item_avg.items())
     # sort from top
     data_models_flat.sort(key=lambda x: statistics.mean([v for v in x[1] if not np.isnan(v)]), reverse=True)
+
+
+    # print for Findings paper
+    if langs_i_printed % 3 == 0:
+        print("\n\\noindent")
+    print(
+        f"\\includegraphics[width=5cm]{{figures_new/results_perlang/{langs}.pdf}}",
+        end=(r"\hfill" if langs_i_printed % 3 != 2 else "") + "\n"
+    )
+
+    langs_i_printed += 1
+
+    # store for later
+    data_model_doc = {model: dict(docs) for model, docs in data_model_doc.items()} # type: ignore
+    data_for_perlang.append((lang1, lang2, data_models_flat, data_model_doc, doc_ids))
+
 
     data_typst = []
     for model_i, (model, scores) in enumerate(data_models_flat):
@@ -151,11 +222,6 @@ for langs, data_local in data.items():
             )
         })
 
-    langs = langs.removesuffix(" v3")
-    lang1, lang2 = [utils.LANG_TO_NAME[lang] for lang in langs.split("---")]
-    for model in data_model_item_avg:
-        data_global[model][f"{lang1}---{lang2}"] = float(statistics.mean([v for v in data_model_item_avg[model] if not np.isnan(v)]))
-
     typst.compile(
         input="humeval/02-template-perlang.typ",
         sys_inputs={
@@ -171,16 +237,7 @@ for langs, data_local in data.items():
         output=f"humeval/compiled/results_progress/{langs}.pdf"
     )
 
-    if langs_i_printed % 3 == 0:
-        print("\n\\noindent")
-    print(
-        f"\\includegraphics[width=5cm]{{figures_new/results_perlang/{langs}.pdf}}",
-        end=(r"\hfill" if langs_i_printed % 3 != 2 else "") + "\n"
-    )
-
-    langs_i_printed += 1
-
-
+print()
 print(f"local  {statistics.mean(significance_counter['local']):.2f}, {sum(significance_counter['local'])}")
 print(f"global {statistics.mean(significance_counter['global']):.2f}, {sum(significance_counter['global'])}")
 

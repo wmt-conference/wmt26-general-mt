@@ -80,7 +80,7 @@ def filter_data_lang(langs, data_lang):
 
         if user_probs:
             prob = statistics.mean(user_probs)
-            print(f"{langs} {user:>35} {prob:.2f} logprob for {len(data_user)} items")
+            print(f"{langs} {user:>35} {prob:.2f} prob for {len(data_user)} items")
             logprobs.append(prob)
             if prob < 0.75:
                 user_banlist.add(user)
@@ -90,9 +90,11 @@ def filter_data_lang(langs, data_lang):
 
 data = {langs: filter_data_lang(langs, data_lang) for langs, data_lang in data.items()}
 
-plt.title("logprob per user")
-plt.hist(logprobs, bins=40)
+plt.hist(logprobs, bins=40, color="black")
 plt.xlim(0.5, 1)
+plt.gca().spines[['top', 'right']].set_visible(False)
+plt.ylabel("Number of users")
+plt.xlabel("Probablity")
 plt.show()
 
 with open("humeval/data/annotations_filtered.json", "w") as f:
