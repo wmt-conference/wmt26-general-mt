@@ -1,0 +1,4 @@
+.vscode/
+humeval/data/
+humeval/compiled/
+__pycache__/

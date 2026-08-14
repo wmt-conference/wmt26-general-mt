@@ -12,30 +12,10 @@ import utils
 import os
 import functools
 
-os.chdir(os.path.dirname(os.path.abspath(__file__)) + "/..")
+os.chdir(os.path.dirname(__file__) + "/..")
 
-with open("humeval/data/annotations.json", "r") as f:
+with open("humeval/data/annotations_filtered.json", "r") as f:
     data = json.load(f)
-
-# process __RESET__ actions and tutorial items
-for langs, data_local in data.items():
-    data_new = []
-    for line in data_local:
-        if line["annotation"] == "__RESET__":
-            data_new = []
-        elif "item_id" not in line["item"][0]:
-            # attention check
-            pass
-        elif line["item"][0]["item_id"].startswith("attention_check_"):
-            # attention check
-            pass
-        elif "_#_tutorial_#_" in line["item"][0]["item_id"]:
-            # tutorial item
-            pass
-        else:
-            data_new.append(line)
-    data[langs] = data_new
-
 
 os.makedirs("humeval/compiled/results_perlang/", exist_ok=True)
 os.makedirs("humeval/compiled/results_progress/", exist_ok=True)
@@ -55,14 +35,6 @@ def is_significantly_better(
         _, p_value2 = scipy.stats.ttest_ind(scores_a, scores_b, nan_policy="omit", alternative="greater")
     except ValueError:
         p_value2 = 1.0
-
-    #     try:
-    #     _, p_value3 = scipy.stats.wilcoxon(scores_a, scores_b, nan_policy="omit")
-    #     return p_value3 < 0.05
-    # except ValueError:
-    #     return False
-    # TODO: have our own statistical testing Bayesian model
-    # that takes item difficulty into account?
 
     return p_value1 < 0.05 or p_value2 < 0.05 # type: ignore
 
