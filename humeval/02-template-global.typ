@@ -19,9 +19,9 @@
 
 #let colored_cell = x => {
   if x == -100 {
-    return table.cell(fill: luma(200), [])
+    return table.cell(fill: luma(220), [])
   }
-  table.cell(fill: luma(300).mix((green, x/100*8), (red, (1 - x/100)*5)), round(x, digits: 1))
+  table.cell(fill: luma(300).mix((green, x/100*7), (red, (1 - x/100)*7)), round(x, digits: 1))
 }
 
 #let models = data.map(x => x.at(0))
@@ -36,13 +36,13 @@
 }
 
 #table(
-  columns: (4.5cm,) + (0.8cm, ) * langs.len(),
+  columns: (auto,) + (0.8cm, ) * langs.len(),
   inset: 1pt,
-  rows: auto,
-  align: (bottom+left,) + (horizon+right, ) * langs.len(),
+  rows: (auto, ) + (1.4em, ) * data.len(),
+  align: (horizon+left,) + (horizon+right, ) * langs.len(),
   stroke: none,
   // table.hline(),
-  strong[Model]+v(3pt),
+  table.cell(align: bottom+left, strong[Model]+v(3pt)),
   ..langs.map(x => {
     let (lang1, lang2) = (
       x
@@ -54,7 +54,7 @@
   ),
   table.hline(),
   ..data.map(x => {
-    return (render_model(x.at(0)), ..langs.map(lang => colored_cell(x.at(1).at(lang))))
+    return (render_model(x.at(0))+h(-20pt), ..langs.map(lang => colored_cell(x.at(1).at(lang))))
   }).flatten(),
   table.hline(),
 )

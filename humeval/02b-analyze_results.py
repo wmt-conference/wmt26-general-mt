@@ -12,7 +12,7 @@ import utils
 import os
 import math
 import functools
-import multiprocessing
+import matplotlib.pyplot as plt
  
 os.chdir(os.path.dirname(__file__) + "/..")
 
@@ -45,8 +45,10 @@ def is_significantly_better(
     scores_b: tuple[float | None, ...],
     n_resamples: int = 100
 ) -> bool:
-    pairs = [(a, b) for a, b in zip(scores_a, scores_b)
-             if a is not None and b is not None and not math.isnan(a) and not math.isnan(b)]
+    pairs = [
+        (a, b) for a, b in zip(scores_a, scores_b)
+        if a is not None and b is not None and not math.isnan(a) and not math.isnan(b)
+    ]
     diffs = np.array([a - b for a, b in pairs])
     
     valid_a = np.array([a for a in scores_a if a is not None and not math.isnan(a)])
@@ -105,8 +107,13 @@ with open("wmt26_participants.jsonl", "r") as f:
     }
 
 
+
 data_global: dict[Model, dict[Langs, float]] = collections.defaultdict(lambda: collections.defaultdict(lambda: -100))
 data_for_perlang = []
+data_global_domains = []
+all_scores_global = []
+top_system_scores_global = []
+top_translation_scores_global = []
 
 langs_i_printed = 0
 significance_counter = collections.defaultdict(list)
@@ -160,6 +167,27 @@ for langs, data_local in data.items():
     data_models_flat = list(data_model_item_avg.items())
     # sort from top
     data_models_flat.sort(key=lambda x: statistics.mean([v for v in x[1] if not np.isnan(v)]), reverse=True)
+
+    top_model = data_models_flat[0][0]
+    domain_scores = collections.defaultdict(list)
+    for i, item_id in enumerate(item_ids):
+        domain = item_id.split("_###_", 1)[0]
+        score = data_model_item_avg[top_model][i]
+        if not np.isnan(score):
+            domain_scores[domain.capitalize()].append(score)
+    row_domains = {d: statistics.mean(s) for d, s in domain_scores.items()}
+    row_domains["Avg."] = statistics.mean([v for v in data_model_item_avg[top_model] if not np.isnan(v)])
+    data_global_domains.append([f"{lang1}---{lang2}", row_domains])
+
+    for model_scores in data_model_item_avg.values():
+        all_scores_global.extend([s for s in model_scores if not np.isnan(s)])
+    
+    top_system_scores_global.extend([s for s in data_model_item_avg[top_model] if not np.isnan(s)])
+
+    for i in range(len(item_ids)):
+        item_scores = [data_model_item_avg[model][i] for model in data_model_item_avg if not np.isnan(data_model_item_avg[model][i])]
+        if item_scores:
+            top_translation_scores_global.append(max(item_scores))
 
 
     # print for Findings paper
@@ -279,3 +307,69 @@ typst.compile(
     },
     output=f"humeval/compiled/results_global.pdf"
 )
+
+all_domains_set = {}
+for row in data_global_domains:
+    for d in row[1].keys():
+        if d != "Avg." and d not in ("Factchecking", "Edu"):
+            all_domains_set[d] = None
+
+domain_avg = {}
+for d in all_domains_set.keys():
+    scores = [row[1][d] for row in data_global_domains if d in row[1] and row[1][d] != -100]
+    domain_avg[d] = statistics.mean(scores) if scores else -100
+
+sorted_domains = sorted(all_domains_set.keys(), key=lambda d: domain_avg[d], reverse=True)
+all_domains = sorted_domains + ["Avg."]
+
+data_global_domains.sort(key=lambda row: row[1].get("Avg.", -100), reverse=True)
+
+for row in data_global_domains:
+    row[1] = {d: row[1].get(d, -100) for d in all_domains}
+
+typst.compile(
+    input="humeval/02-template-global_domains.typ",
+    sys_inputs={
+        "data": json.dumps(data_global_domains),
+    },
+    output=f"humeval/compiled/results_global_domains.pdf"
+)
+
+# %%
+plt.rcParams["font.family"] = "serif"
+
+fig, ax = plt.subplots(figsize=(4, 2.5))
+colors = ['#cbaf5d', '#5d9acb', '#79cb5d']
+labels = ['All', 'Top system', 'Top translation']
+
+data_to_plot = [all_scores_global, top_system_scores_global, top_translation_scores_global]
+weights = [np.ones(len(x)) / len(x) if len(x) > 0 else [] for x in data_to_plot]
+
+ax.hist(
+    data_to_plot,
+    bins=20,
+    range=(0, 100),
+    color=colors,
+    label=labels,
+    weights=weights,
+    edgecolor='none'
+)
+
+ax.set_xlabel('cESA Score', fontsize=12)
+ax.set_ylabel('Frequency', fontsize=12)
+# shift xticks to the left
+ax.set_xticks(
+    np.arange(0, 101, 10)-2.5,
+    np.arange(0, 101, 10)
+)
+ax.set_yticks([])
+
+ax.spines['top'].set_visible(False)
+ax.spines['right'].set_visible(False)
+ax.spines['left'].set_visible(True)
+ax.spines['bottom'].set_visible(True)
+
+ax.legend(loc='upper center', bbox_to_anchor=(0.5, 1.15), ncol=3, frameon=False, handletextpad=0.2, columnspacing=1)
+
+plt.tight_layout(pad=0)
+plt.savefig('humeval/compiled/results_segment_headroom.pdf', bbox_inches='tight')

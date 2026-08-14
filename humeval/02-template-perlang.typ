@@ -19,7 +19,7 @@
 
 
 #let colored_cell = x => {
-  table.cell(fill: luma(300).mix((green, x/100*8), (red, (1 - x/100)*5)), round(x, digits: 1))
+  table.cell(fill: luma(300).mix((green, x/100*7), (red, (1 - x/100)*7)), round(x, digits: 1))
 }
 
 #let render_model = x => {
