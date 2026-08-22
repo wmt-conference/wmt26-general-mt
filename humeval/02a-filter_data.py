@@ -48,7 +48,6 @@ def filter_data_lang(langs, data_lang):
         if len(data_user) < 3:
             continue
         model_scores_without_user = collections.defaultdict(list)
-        model_scores_with_user = collections.defaultdict(list)
         for line in data_lang:
             for item_ann, item in zip(line["annotation"], line["item"]):
                 for model, ann_obj in item_ann.items():

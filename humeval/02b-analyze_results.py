@@ -1,6 +1,7 @@
 # %%
 
 import collections
+import random
 import statistics
 import scipy.stats
 import typst
@@ -13,6 +14,7 @@ import os
 import math
 import functools
 import matplotlib.pyplot as plt
+plt.rcParams["font.family"] = "serif"
  
 os.chdir(os.path.dirname(__file__) + "/..")
 
@@ -20,7 +22,6 @@ with open("humeval/data/annotations_filtered.json", "r") as f:
     data = json.load(f)
 
 os.makedirs("humeval/compiled/results_perlang/", exist_ok=True)
-os.makedirs("humeval/compiled/results_progress/", exist_ok=True)
 
 @functools.lru_cache(maxsize=None)
 def is_significantly_better_parametric(
@@ -89,6 +90,22 @@ def is_significantly_better(
 
     return False
 
+
+@functools.lru_cache(maxsize=None)
+def confidence_interval(
+    scores: list[float],
+    confidence: float = 0.95,
+) -> tuple[float, float]:
+    # t-test for numpy scipy
+    # drop none and nan
+    data = np.array(scores)
+    data = data[~np.isnan(data)]
+    return scipy.stats.t.interval(
+        confidence=confidence,
+        df=len(data)-1,
+        loc=np.mean(data),
+        scale=scipy.stats.sem(data)
+    )
 
 Model = str
 Langs = str
@@ -194,7 +211,7 @@ for langs, data_local in data.items():
     if langs_i_printed % 3 == 0:
         print("\n\\noindent")
     print(
-        f"\\includegraphics[width=5cm]{{figures_new/results_perlang/{langs}.pdf}}",
+        f"\\includegraphics[width=5cm]{{figures/results_perlang/{langs}.pdf}}",
         end=(r"\hfill" if langs_i_printed % 3 != 2 else "") + "\n"
     )
 
@@ -233,6 +250,24 @@ for langs, data_local in data.items():
                 )
             )
 
+        # find the rank of the first model that is not significantly better than the current model
+        rank_top = model_i
+        for rank_top in range(model_i, 0-1, -1):
+            if is_significantly_better(
+                tuple(data_models_flat[rank_top-1][1]),
+                tuple(data_models_flat[model_i][1]),
+            ):
+                break
+
+        rank_bottom = model_i
+        # find the rank of the last model that is not significantly worse than the current model
+        for rank_bottom in range(model_i, len(data_models_flat)-1):
+            if is_significantly_better(
+                tuple(data_models_flat[model_i][1]),
+                tuple(data_models_flat[rank_bottom+1][1]),
+            ):
+                break
+
         if model_i != len(data_models_flat) - 1:
             significance_counter["local"].append(int(significant_locally)) # type: ignore
             significance_counter["global"].append(int(significant_globally)) # type: ignore
@@ -242,6 +277,8 @@ for langs, data_local in data.items():
             "scores_seg": scores_seg,
             "scores_doc": scores_doc,
             "scores_mean": statistics.mean(scores_nonan),
+            "rank_top": rank_top + 1,
+            "rank_bottom": rank_bottom + 1,
             "cluster": (
                 "nothing" if model_i == len(data_models_flat) - 1 else
                 "yes_cluster" if significant_globally else # type: ignore
@@ -257,13 +294,58 @@ for langs, data_local in data.items():
             "langs": json.dumps(f"{lang1}---{lang2}")},
         output=f"humeval/compiled/results_perlang/{langs}.pdf"
     )
-    typst.compile(
-        input="humeval/02-template-progress.typ",
-        sys_inputs={
-            "data": json.dumps(data_typst),
-            "langs": json.dumps(f"{lang1}---{lang2}")},
-        output=f"humeval/compiled/results_progress/{langs}.pdf"
-    )
+
+    if langs == "ces_Latn---deu_Latn":
+        typst.compile(
+            input="humeval/02-template-progress.typ",
+            sys_inputs={
+                "data": json.dumps(data_typst),
+                "langs": json.dumps(f"{lang1}---{lang2}")},
+            output=f"humeval/compiled/dynamic_assignment_checkboxes.pdf"
+        )
+
+        # plot nice dynamic figure for the paper
+        plt.figure(figsize=(4, 2.5))
+        # select only few models for clarity
+        data_models_flat_filtered = data_models_flat[::2]
+        # for each model show how confidence intervals evolve as we add more evaluations points
+        for model, scores in data_models_flat_filtered:
+            # stable shuffle
+            scores = random.Random(0).sample(scores, len(scores))
+            intervals = [
+                confidence_interval(tuple(scores[:chunk_i]), confidence=0.5)
+                for chunk_i in range(len(scores))
+            ]
+            xs = range(len(scores))
+
+            # select only scores that are not nan
+            xs_active, ys_active = zip(*[
+                (x, (low + high) / 2)
+                for x, (low, high), y in zip(xs, intervals, scores)
+                if not math.isnan(y)
+            ])
+            plt.scatter(
+                xs_active,
+                ys_active,
+                color="black",
+                s=0.5,
+                linewidth=0,
+            )
+            plt.fill_between(
+                xs,
+                [low for low, high in intervals],
+                [high for low, high in intervals],
+                alpha=0.2,
+                # color="black",
+                linewidth=0,
+            )
+        plt.gca().spines[['top', 'right']].set_visible(False)
+        plt.ylim(40, 90)
+        plt.ylabel("Rolling model average")
+        plt.xlim(5, None)
+        plt.xlabel("Annotations")
+        plt.tight_layout(pad=0.1)
+        plt.savefig("humeval/compiled/dynamic_assignment_intervals.pdf", bbox_inches='tight')
 
 print()
 print(f"local  {statistics.mean(significance_counter['local']):.2f}, {sum(significance_counter['local'])}")
@@ -336,7 +418,6 @@ typst.compile(
 )
 
 # %%
-plt.rcParams["font.family"] = "serif"
 
 fig, ax = plt.subplots(figsize=(4, 2.5))
 colors = ['#cbaf5d', '#5d9acb', '#79cb5d']
