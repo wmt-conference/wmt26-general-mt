@@ -24,46 +24,66 @@ foreach ($_SERVER as $k => $v) {
 curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
 
 if (in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'])) {
-    $body = file_get_contents('php://input');
-    if (!empty($body))
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $body);
+    $input = fopen('php://input', 'r');
+    if ($input) {
+        curl_setopt($ch, CURLOPT_UPLOAD, true);
+        curl_setopt($ch, CURLOPT_INFILE, $input);
+        
+        $content_length = isset($_SERVER['HTTP_CONTENT_LENGTH']) ? $_SERVER['HTTP_CONTENT_LENGTH'] : 
+                         (isset($_SERVER['CONTENT_LENGTH']) ? $_SERVER['CONTENT_LENGTH'] : null);
+        if ($content_length !== null) {
+            curl_setopt($ch, CURLOPT_INFILESIZE, (int)$content_length);
+        }
+        // Ensure the correct HTTP method is used instead of defaulting to PUT
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $method);
+    }
 }
 
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_HEADER, true);
+// Stream the response directly to stdout without buffering it
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, false);
+curl_setopt($ch, CURLOPT_HEADER, false);
 curl_setopt($ch, CURLOPT_FOLLOWLOCATION, false);
 curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
 curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
 
-$response = curl_exec($ch);
-$http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-$header_size = curl_getinfo($ch, CURLINFO_HEADER_SIZE);
-
-// curl_close is omitted; object lifecycle is handled by PHP garbage collection.
-
-if ($response === false) {
-    http_response_code(502);
-    die('Bad Gateway');
-}
-
-http_response_code($http_code);
-
-$res_headers = explode("\r\n", substr($response, 0, $header_size));
+// Handle response headers via callback as they arrive
 $strip_res_headers = ['transfer-encoding', 'connection', 'content-encoding'];
-
-foreach ($res_headers as $hdr) {
-    $hdr = trim($hdr);
-    if (empty($hdr) || preg_match('#^HTTP/(1\.0|1\.1|2|3)\s+\d{3}#i', $hdr))
-        continue;
-
+curl_setopt($ch, CURLOPT_HEADERFUNCTION, function($curl, $header) use ($strip_res_headers) {
+    $len = strlen($header);
+    $hdr = trim($header);
+    
+    // Extract HTTP status code and set it
+    if (preg_match('#^HTTP/(1\.0|1\.1|2|3)\s+(\d{3})#i', $hdr, $matches)) {
+        http_response_code((int)$matches[2]);
+        return $len;
+    }
+    
+    if (empty($hdr)) {
+        return $len;
+    }
+    
     $parts = explode(':', $hdr, 2);
     if (count($parts) === 2) {
         $name = strtolower(trim($parts[0]));
-        if (in_array($name, $strip_res_headers))
-            continue;
-        header($hdr, true);
+        if (!in_array($name, $strip_res_headers)) {
+            $replace = ($name !== 'set-cookie');
+            header($hdr, $replace);
+        }
     }
+    return $len;
+});
+
+$response = curl_exec($ch);
+
+if ($response === false) {
+    // Only set bad gateway if we haven't started streaming headers/body yet
+    if (!headers_sent()) {
+        http_response_code(502);
+    }
+    die('Bad Gateway');
 }
 
-echo substr($response, $header_size);
+if (isset($input) && is_resource($input)) {
+    fclose($input);
+}
 ?>
