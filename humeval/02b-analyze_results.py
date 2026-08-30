@@ -197,7 +197,8 @@ for langs, data_local in data.items():
         if not np.isnan(score):
             domain_scores[domain.capitalize()].append(score)
     row_domains = {d: statistics.mean(s) for d, s in domain_scores.items()}
-    row_domains["Avg."] = statistics.mean([v for v in data_model_item_avg[top_model_domains] if not np.isnan(v)])
+    # macro-average
+    row_domains["Avg."] = statistics.mean(row_domains.values())
     data_global_domains.append([f"{lang1}---{lang2}", row_domains])
 
     for model_scores in data_model_item_avg.values():
