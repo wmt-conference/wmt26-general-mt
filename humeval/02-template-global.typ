@@ -29,9 +29,9 @@
 
 #let render_model = x => {
   if x.contains(" OPEN") {
-    return x.replace(" OPEN", "") + " " + sym.circle.filled
+    return box(fill: luma(220), inset: (x: 2pt, y: 1pt), radius: 2pt, x.replace(" OPEN", "")) + h(-20pt)
   } else {
-    return x
+    return x + h(-20pt)
   }
 }
 
@@ -54,7 +54,7 @@
   ),
   table.hline(),
   ..data.map(x => {
-    return (render_model(x.at(0))+h(-20pt), ..langs.map(lang => colored_cell(x.at(1).at(lang))))
+    return (render_model(x.at(0)), ..langs.map(lang => colored_cell(x.at(1).at(lang))))
   }).flatten(),
   table.hline(),
 )
