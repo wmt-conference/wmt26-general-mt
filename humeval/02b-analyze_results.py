@@ -186,14 +186,18 @@ for langs, data_local in data.items():
     data_models_flat.sort(key=lambda x: statistics.mean([v for v in x[1] if not np.isnan(v)]), reverse=True)
 
     top_model = data_models_flat[0][0]
+
+    # Excluding Human systems from results_global_domains.pdf
+    data_models_flat_no_human = [x for x in data_models_flat if not x[0].startswith("Human (")]
+    top_model_domains = data_models_flat_no_human[0][0] if data_models_flat_no_human else top_model
     domain_scores = collections.defaultdict(list)
     for i, item_id in enumerate(item_ids):
         domain = item_id.split("_###_", 1)[0]
-        score = data_model_item_avg[top_model][i]
+        score = data_model_item_avg[top_model_domains][i]
         if not np.isnan(score):
             domain_scores[domain.capitalize()].append(score)
     row_domains = {d: statistics.mean(s) for d, s in domain_scores.items()}
-    row_domains["Avg."] = statistics.mean([v for v in data_model_item_avg[top_model] if not np.isnan(v)])
+    row_domains["Avg."] = statistics.mean([v for v in data_model_item_avg[top_model_domains] if not np.isnan(v)])
     data_global_domains.append([f"{lang1}---{lang2}", row_domains])
 
     for model_scores in data_model_item_avg.values():
