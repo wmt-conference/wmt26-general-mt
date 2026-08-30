@@ -189,15 +189,20 @@ for langs, data_local in data.items():
 
     # Excluding Human systems from results_global_domains.pdf
     data_models_flat_no_human = [x for x in data_models_flat if not x[0].startswith("Human (")]
-    top_model_domains = data_models_flat_no_human[0][0] if data_models_flat_no_human else top_model
-    domain_scores = collections.defaultdict(list)
-    for i, item_id in enumerate(item_ids):
-        domain = item_id.split("_###_", 1)[0]
-        score = data_model_item_avg[top_model_domains][i]
-        if not np.isnan(score):
-            domain_scores[domain.capitalize()].append(score)
-    row_domains = {d: statistics.mean(s) for d, s in domain_scores.items()}
-    # macro-average across domains, excluding Factchecking/Edu 
+
+    # macro-average across systems
+    domain_scores_per_model = collections.defaultdict(list)
+    for model, item_scores in data_models_flat_no_human:
+        per_model_domain_scores = collections.defaultdict(list)
+        for i, item_id in enumerate(item_ids):
+            domain = item_id.split("_###_", 1)[0]
+            score = item_scores[i]
+            if not np.isnan(score):
+                per_model_domain_scores[domain.capitalize()].append(score)
+        for domain, scores in per_model_domain_scores.items():
+            domain_scores_per_model[domain].append(statistics.mean(scores))
+    row_domains = {d: statistics.mean(s) for d, s in domain_scores_per_model.items()}
+    # macro-average across domains, excluding Factchecking/Edu
     row_domains["Avg."] = statistics.mean([v for d, v in row_domains.items() if d not in ("Factchecking", "Edu")])
     data_global_domains.append([f"{lang1}---{lang2}", row_domains])
 
