@@ -124,6 +124,11 @@ with open("wmt26_participants.jsonl", "r") as f:
     }
 
 
+MODEL_OVERRIDES = {
+    "Grial-SalamandraTA7bFFT": {"open_lookup": "SalamandraTA7bFFT"},
+    "VoxNexus_V1": {"display": "[Anonymous]"},
+}
+
 
 data_global: dict[Model, dict[Langs, float]] = collections.defaultdict(lambda: collections.defaultdict(lambda: -100))
 data_for_perlang = []
@@ -147,7 +152,9 @@ for langs, data_local in data.items():
         for item_ann, item in zip(line["annotation"], line["item"]):
             item_ids.add(item["item_id"])
             for model, ann_obj in item_ann.items():
-                model = model + (" OPEN" if participants_open.get(model, False) else "")
+                overrides = MODEL_OVERRIDES.get(model, {})
+                is_open = participants_open.get(overrides.get("open_lookup", model), False)
+                model = overrides.get("display", model.replace("7bFFT", "")) + (" OPEN" if is_open else "")
                 data_model_item[model][item["item_id"]].append(ann_obj["score"])
 
     # sort by number of annotated models
