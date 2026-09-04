@@ -38,7 +38,7 @@ Each translation system has a corresponding JSONL file containing the following 
 
 The human evaluation at WMT is done with the [Pearmut tool](https://github.com/zouharvi/pearmut) which you'll need to have installed if you wish to replicate them.
 This repository is intended for the specific WMT human evaluation campaign.
-If you simply wish to run your own human evaluation in a similar setup, please refer to the [Pearmut tool documentation](https://github.com/zouharvi/pearmut) instead and use the "Contrastive Error Span Annotation (cESA)" protocol.
+If you simply wish to run your own human evaluation in a similar setup, please refer to the [Pearmut tool documentation](https://github.com/zouharvi/pearmut) instead and use the [Contrastive Error Span Annotation (cESA)](https://arxiv.org/abs/2607.26640) protocol.
 The specific version that was used for WMT26 is 1.1.6, though future version _may_ be compatible.
 
 ## Re-running human evaluation
