@@ -93,3 +93,46 @@ Then you can proceed with adding the campaigns
 ```bash
 pearmut add campaigns/v3/*
 ```
+
+# Citation
+
+If you use the WMT26 findings, code, or data, please cite as follows:
+```bibtex
+@inproceedings{kocmi-etal-2026-findings,
+    title = "Findings of the {WMT}26 General Machine Translation Shared Task: Contrastive Dynamic Human Evaluation at Scale",
+    author = "Kocmi, Tom  and
+      Artemova, Ekaterina  and
+      Avramidis, Eleftherios  and
+      Bawden, Rachel  and
+      Bojar, Ond{\v{r}}ej  and
+      Dukanov, Sergey  and
+      Dvorkovich, Anton  and
+      Fishel, Mark  and
+      Freitag, Markus  and
+      Frontull, Samuel  and
+      Gowda, Thamme  and
+      Grundkiewicz, Roman  and
+      Haddow, Barry  and
+      Kharevich, Stan  and
+      Koehn, Philipp  and
+      Li, Zheng  and
+      Maillard, Jean  and
+      Monz, Christof  and
+      Murauski, Alexander  and
+      Murray, Kenton  and
+      Nagata, Masaaki  and
+      Perrella, Stefano  and
+      Popel, Martin  and
+      Popovi{\'c}, Maja  and
+      Proietti, Lorenzo  and
+      Rajaee, Sara  and
+      Riley, Parker  and
+      Shmatova, Mariya  and
+      Steingr{\'i}msson, Stein{\th}{\'o}r  and
+      Yankovskaya, Lisa  and
+      Zouhar, Vil{\'e}m",
+    booktitle = "To appear in Proceedings of the Eleventh Conference on Machine Translation",
+    year = "2026",
+    publisher = "Association for Computational Linguistics",
+}
+```
