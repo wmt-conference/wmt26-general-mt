@@ -29,7 +29,7 @@
 
 #let render_model = x => {
   if x.contains(" OPEN") {
-    return box(fill: luma(220), inset: (x: 2pt, y: 1pt), radius: 2pt, x.replace(" OPEN", ""))
+    return box(fill: luma(220), outset: 2pt, radius: 1pt, x.replace(" OPEN", ""))
   } else {
     return x
   }

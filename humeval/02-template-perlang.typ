@@ -24,7 +24,7 @@
 
 #let render_model = x => {
   if x.contains(" OPEN") {
-    return box(fill: luma(220), inset: (x: 2pt, y: 1pt), radius: 2pt, x.replace(" OPEN", ""))
+    return box(fill: luma(220), outset: (left: 1pt, top: 2pt, bottom: 3pt, right: 1pt), radius: 1pt, x.replace(" OPEN", ""))
   } else {
     return x
   }
@@ -37,7 +37,7 @@
       .split("---")
 )
 
-#let toprow = table.cell.with(align: bottom, fill: luma(220))
+#let toprow = table.cell.with(align: bottom)
 
 #table(
   columns: (0.5cm, 4.6cm, 0.8cm, 0.3cm),
@@ -48,8 +48,8 @@
   // table.hline(),
   toprow(align: bottom, text(size: 5pt)[*Rank*]),
   toprow(align: bottom, strong(lang1 + sym.arrow + lang2+h(-1cm))),
-  // if (lang1+lang2).len() < 20 { toprow(align: left+bottom, h(-2pt)+text(size: 5pt)[*Score*])} else {toprow()[]},
-  toprow(align: left+bottom, h(-2pt)+text(size: 5pt)[*Score*]),
+  if (lang1+lang2).len() < 20 { toprow(align: left+bottom, h(-2pt)+text(size: 5pt)[*Score*])} else {toprow()[]},
+  // toprow(align: left+bottom, h(-2pt)+text(size: 5pt)[*Score*]),
   toprow(align: bottom, text(size: 5pt)[*Docs*]+h(-1pt)),
   table.hline(),
   ..data.map(x => {
