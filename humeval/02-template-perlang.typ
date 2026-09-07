@@ -24,7 +24,7 @@
 
 #let render_model = x => {
   if x.contains(" OPEN") {
-    return x.replace(" OPEN", "") + " " + sym.circle.filled
+    return box(fill: luma(220), inset: (x: 2pt, y: 1pt), radius: 2pt, x.replace(" OPEN", ""))
   } else {
     return x
   }
