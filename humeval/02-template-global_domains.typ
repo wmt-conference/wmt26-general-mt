@@ -42,6 +42,7 @@
   inset: 4pt,
   rows: auto,
   align: (horizon+left,) + (horizon+center, ) * domains.len(),
+  column-gutter: (0pt, 0pt, 0pt, 0pt, 2pt),
   stroke: none,
   table.hline(),
   [], ..domains.map(d => align(bottom + center, rotate(-90deg, reflow: true, strong(d)))),

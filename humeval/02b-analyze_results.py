@@ -208,7 +208,7 @@ for langs, data_local in data.items():
                 per_model_domain_scores[domain.capitalize()].append(score)
         for domain, scores in per_model_domain_scores.items():
             domain_scores_per_model[domain].append(statistics.mean(scores))
-    row_domains = {d: statistics.mean(s) for d, s in domain_scores_per_model.items()}
+    row_domains = {d: max(s) for d, s in domain_scores_per_model.items()}
     # macro-average across domains, excluding Factchecking/Edu
     row_domains["Avg."] = statistics.mean([v for d, v in row_domains.items() if d not in ("Factchecking", "Edu")])
     data_global_domains.append([f"{lang1}---{lang2}", row_domains])
@@ -407,6 +407,8 @@ typst.compile(
     output=f"humeval/compiled/results_global.pdf"
 )
 
+# %%
+
 all_domains_set = {}
 for row in data_global_domains:
     for d in row[1].keys():
@@ -425,6 +427,7 @@ data_global_domains.sort(key=lambda row: row[1].get("Avg.", -100), reverse=True)
 
 for row in data_global_domains:
     row[1] = {d: row[1].get(d, -100) for d in all_domains}
+    print(row[1])
 
 typst.compile(
     input="humeval/02-template-global_domains.typ",
