@@ -1,5 +1,6 @@
 #set page(height: auto, width: auto, margin: 0pt)
 #let data = json(bytes(sys.inputs.data))
+#let data_rank = json(bytes(sys.inputs.data_rank))
 // LaTeX ACL font
 #set text(font: "New Computer Modern", size: 10pt)
 
@@ -36,13 +37,14 @@
 }
 
 #table(
-  columns: (auto,) + (0.8cm, ) * langs.len(),
-  inset: 1pt,
+  columns: (auto, auto,) + (0.8cm, ) * langs.len(),
+  inset: 0.5pt,
   rows: (auto, ) + (1.4em, ) * data.len(),
-  align: (horizon+left,) + (horizon+right, ) * langs.len(),
+  align: (horizon+left,) + (horizon+center, ) * langs.len(),
   stroke: none,
   // table.hline(),
   table.cell(align: bottom+left, strong[Model]+v(3pt)),
+  table.cell(align: bottom+left, strong(rotate(-90deg, reflow: true, [Avg. Rank]))),
   ..langs.map(x => {
     let (lang1, lang2) = (
       x
@@ -54,7 +56,11 @@
   ),
   table.hline(),
   ..data.map(x => {
-    return (render_model(x.at(0)), ..langs.map(lang => colored_cell(x.at(1).at(lang))))
+    return (
+      render_model(x.at(0)),
+      text(size: 5pt)[#round(data_rank.at(x.at(0)), digits: 1)],
+      ..langs.map(lang => colored_cell(x.at(1).at(lang)))
+    )
   }).flatten(),
   table.hline(),
 )

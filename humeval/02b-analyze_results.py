@@ -403,6 +403,7 @@ typst.compile(
     input="humeval/02-template-global.typ",
     sys_inputs={
         "data": json.dumps(data_global_flat),
+        "data_rank": json.dumps({model: rank*len(model_average_rank) for model, rank in model_average_rank.items()}),
     },
     output=f"humeval/compiled/results_global.pdf"
 )
@@ -427,7 +428,6 @@ data_global_domains.sort(key=lambda row: row[1].get("Avg.", -100), reverse=True)
 
 for row in data_global_domains:
     row[1] = {d: row[1].get(d, -100) for d in all_domains}
-    print(row[1])
 
 typst.compile(
     input="humeval/02-template-global_domains.typ",
