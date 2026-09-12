@@ -399,6 +399,8 @@ model_average_rank = {
 }
 data_global_flat.sort(key=lambda x: model_average_rank[x[0]])
 
+# %%
+
 typst.compile(
     input="humeval/02-template-global.typ",
     sys_inputs={
