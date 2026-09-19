@@ -38,14 +38,14 @@
 #let domains = data.at(0).at(1).keys()
 
 #table(
-  columns: (auto,) + (0.8cm, ) * domains.len(),
-  inset: 4pt,
+  columns: (auto,) + (0.72cm, ) * domains.len(),
+  inset: 2pt,
   rows: auto,
   align: (horizon+left,) + (horizon+center, ) * domains.len(),
-  column-gutter: (0pt, 0pt, 0pt, 0pt, 2pt),
+  column-gutter: (0pt, 0pt, 0pt, 0pt, 0pt, 0pt, 2pt),
   stroke: none,
   table.hline(),
-  [], ..domains.map(d => align(bottom + center, rotate(-90deg, reflow: true, strong(d)))),
+  [], ..domains.map(d => align(bottom + center, rotate(-90deg, reflow: true, strong(d.replace("Factchecking", "Factcheck"))))),
   table.hline(),
   ..data.map(row => {
     (format_pair(row.at(0)), ..domains.map(d => colored_cell(row.at(1).at(d, default: -100))))

@@ -415,7 +415,7 @@ typst.compile(
 all_domains_set = {}
 for row in data_global_domains:
     for d in row[1].keys():
-        if d != "Avg." and d not in ("Factchecking", "Edu"):
+        if d != "Avg.":
             all_domains_set[d] = None
 
 domain_avg = {}
@@ -431,6 +431,7 @@ data_global_domains.sort(key=lambda row: row[1].get("Avg.", -100), reverse=True)
 for row in data_global_domains:
     row[1] = {d: row[1].get(d, -100) for d in all_domains}
 
+# %%
 typst.compile(
     input="humeval/02-template-global_domains.typ",
     sys_inputs={
