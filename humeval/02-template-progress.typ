@@ -20,9 +20,9 @@
 
 #let render_model = x => {
   if x.contains(" OPEN") {
-    return x.replace(" OPEN", "") + " " + sym.circle.filled
+    return x.replace(" OPEN", "")
   } else {
-    return x
+    return box(fill: luma(220), outset: (left: 1pt, top: 1pt, bottom: 1pt, right: 1pt), radius: 1pt, x)
   }
 }
 

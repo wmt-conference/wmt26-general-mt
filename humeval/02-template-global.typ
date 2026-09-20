@@ -26,13 +26,13 @@
 }
 
 #let models = data.map(x => x.at(0))
-#let langs = data.filter(x => x.at(0) == "Gemini 3.1 Pro").at(0).at(1).keys()
+#let langs = data.at(0).at(1).keys()
 
 #let render_model = x => {
   if x.contains(" OPEN") {
-    return box(fill: luma(220), outset: 2pt, radius: 1pt, x.replace(" OPEN", ""))
+    return x.replace(" OPEN", "")
   } else {
-    return x
+    return box(fill: luma(220), outset: 2pt, radius: 1pt, x)
   }
 }
 

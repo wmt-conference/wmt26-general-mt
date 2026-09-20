@@ -1,4 +1,5 @@
-#set page(height: 13cm, width: auto, margin: 0pt)
+#let page_height = sys.inputs.at("page_height", default: "13cm")
+#set page(height: if page_height == "auto" { auto } else { eval(page_height) }, width: auto, margin: 0pt)
 #let data = json(bytes(sys.inputs.data))
 #let langs = json(bytes(sys.inputs.langs))
 // LaTeX ACL font
@@ -24,9 +25,9 @@
 
 #let render_model = x => {
   if x.contains(" OPEN") {
-    return box(fill: luma(220), outset: (left: 1pt, top: 2pt, bottom: 3pt, right: 1pt), radius: 1pt, x.replace(" OPEN", ""))
+    return x.replace(" OPEN", "")
   } else {
-    return x
+    return box(fill: luma(220), outset: (left: 1pt, top: 2pt, bottom: 3pt, right: 1pt), radius: 1pt, x)
   }
 }
 
