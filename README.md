@@ -78,6 +78,50 @@ pearmut add-existing campaigns/* --annotations annotations.json --progress progr
 pearmut run
 ```
 
+## Building synthetic references
+
+The `humeval/07-build_synthetic_references.py` script builds the released
+hybrid synthetic references from a completed cESA annotation dump. It follows
+the published GenMT RESET, content-item, and annotator-reliability filtering,
+then validates that every retained score belongs to a translation displayed in
+the corresponding Pearmut screen. Scores for systems absent from `item.tgt`
+are invalid screen evidence and are excluded with their counts recorded in the
+release manifest.
+
+For each document, the script selects among candidates that have retained cESA
+evidence for every source segment. Because the same translation may be
+assessed in multiple screens, its per-segment cESA score and major-error count
+are first averaged over all retained assessments. The script chooses the
+document candidate with the highest average of these per-segment cESA scores,
+then repairs only segments with per-segment average cESA below 80 or an
+average major-error count above zero. The selected document output and all
+repairs are losslessly source-aligned, so every released reference contains
+every segment of its document.
+
+More precisely, the document translation is retained by default. For a
+triggered segment, the candidate pool is restricted to translations actually
+displayed and assessed for that same segment. The candidate with highest mean
+cESA is considered; an exact cESA tie prefers fewer average major-error spans,
+then more annotations and system name. A replacement is made only for a higher
+per-segment average cESA score, or for an equal score with fewer average
+major-error spans.
+
+The script requires the test data and system outputs already present under
+`data/`, together with a completed annotation dump. Install its small extra
+dependency and run:
+
+```bash
+pip install numpy sacrebleu
+python humeval/07-build_synthetic_references.py \
+  --annotations /path/to/annotations.json \
+  --output-dir synthetic_references
+```
+
+The output directory contains the complete JSONL references,
+segment-level provenance, per-direction summaries, a manifest recording the
+input paths and filtering decisions. The script fails rather than releasing
+incomplete or non-lossless documents.
+
 ## Preparing campaign files from source
 
 To prepare the campaign sources based on GenMT blindset, you will need access to the internal repository.
