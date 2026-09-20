@@ -22,23 +22,7 @@ with open("humeval/data/annotations_filtered.json", "r") as f:
     data = json.load(f)
 
 os.makedirs("humeval/compiled/results_perlang/", exist_ok=True)
-
-@functools.lru_cache(maxsize=None)
-def is_significantly_better_parametric(
-    scores_a: tuple[float | None, ...],
-    scores_b: tuple[float | None, ...]
-) -> bool:
-    try:
-        _, p_value1 = scipy.stats.wilcoxon(scores_a, scores_b, nan_policy="omit", alternative="greater") # type: ignore
-    except ValueError:
-        p_value1 = 1.0
-
-    try:
-        _, p_value2 = scipy.stats.ttest_ind(scores_a, scores_b, nan_policy="omit", alternative="greater")
-    except ValueError:
-        p_value2 = 1.0
-
-    return p_value1 < 0.05 or p_value2 < 0.05 # type: ignore
+os.makedirs("humeval/compiled/results_perlang_constrained/", exist_ok=True)
 
 @functools.lru_cache(maxsize=None)
 def is_significantly_better(
@@ -127,6 +111,8 @@ with open("wmt26_participants.jsonl", "r") as f:
 MODEL_OVERRIDES = {
     "Grial-SalamandraTA7bFFT": {"open_lookup": "SalamandraTA7bFFT"},
     "VoxNexus_V1": {"display": "[Anonymous]"},
+    "Tower 9B": {"display": "Tower+ 9B"},
+    "TartuNLP": {"open_lookup": "Tähetorn"},
 }
 
 
@@ -312,6 +298,18 @@ for langs, data_local in data.items():
         output=f"humeval/compiled/results_perlang/{langs}.pdf"
     )
 
+    # constrained (open-weights) systems only
+    data_typst_constrained = [d for d in data_typst if " OPEN" in d["model"]]
+    if data_typst_constrained:
+        typst.compile(
+            input="humeval/02-template-perlang.typ",
+            sys_inputs={
+                "data": json.dumps(data_typst_constrained),
+                "langs": json.dumps(f"{lang1}---{lang2}"),
+                "page_height": "6cm"},
+            output=f"humeval/compiled/results_perlang_constrained/{langs}.pdf"
+        )
+
     if langs == "ces_Latn---deu_Latn":
         typst.compile(
             input="humeval/02-template-progress.typ",
@@ -410,7 +408,16 @@ typst.compile(
     output=f"humeval/compiled/results_global.pdf"
 )
 
-# %%
+data_global_flat_constrained = [x for x in data_global_flat if " OPEN" in x[0]]
+
+typst.compile(
+    input="humeval/02-template-global.typ",
+    sys_inputs={
+        "data": json.dumps(data_global_flat_constrained),
+        "data_rank": json.dumps({model: rank*len(model_average_rank) for model, rank in model_average_rank.items()}),
+    },
+    output=f"humeval/compiled/results_global_constrained.pdf"
+)
 
 all_domains_set = {}
 for row in data_global_domains:
