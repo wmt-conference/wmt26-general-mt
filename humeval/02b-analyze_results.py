@@ -298,9 +298,87 @@ for langs, data_local in data.items():
         output=f"humeval/compiled/results_perlang/{langs}.pdf"
     )
 
-    # constrained (open-weights) systems only
-    data_typst_constrained = [d for d in data_typst if " OPEN" in d["model"]]
-    if data_typst_constrained:
+    # constrained (open-weights) systems only: a copy of data_model_item with only
+    # the constrained models, run through the same avg/doc/rank/cluster computation
+    # as above, so rank and cluster are computed from scratch within just this subset
+    data_model_item_constrained = {model: v for model, v in data_model_item.items() if " OPEN" in model}
+    if data_model_item_constrained:
+        data_model_item_avg_constrained: dict[Model, list[float]] = {
+            model: [
+                (
+                    float(statistics.mean(data_model_item_constrained[model][item_id])) if item_id in data_model_item_constrained[model]
+                    else float("nan")
+                )
+                for item_id in item_ids
+            ]
+            for model in data_model_item_constrained
+        }
+
+        data_model_doc_constrained: dict[Model, dict[Doc, list[float]]] = collections.defaultdict(lambda: collections.defaultdict(lambda: []))
+        for model, item_scores in data_model_item_avg_constrained.items():
+            for item_i, item_id in enumerate(item_ids):
+                doc_id = item_id.rsplit("_###_", 1)[0]
+                if not np.isnan(item_scores[item_i]):
+                    data_model_doc_constrained[model][doc_id].append(item_scores[item_i])
+
+        data_models_flat_constrained = list(data_model_item_avg_constrained.items())
+        data_models_flat_constrained.sort(key=lambda x: statistics.mean([v for v in x[1] if not np.isnan(v)]), reverse=True)
+
+        data_typst_constrained = []
+        for model_i, (model, scores) in enumerate(data_models_flat_constrained):
+            scores_nonan = [v for v in scores if not np.isnan(v)]
+            scores_seg = [v if not np.isnan(v) else -100 for v in scores]
+            scores_doc = [
+                statistics.mean(data_model_doc_constrained[model][doc_id]) if doc_id in data_model_doc_constrained[model] else -100
+                for doc_id in doc_ids
+            ]
+            if model_i < len(data_models_flat_constrained) - 1:
+                significant_locally = is_significantly_better(
+                    tuple(data_models_flat_constrained[model_i][1]),
+                    tuple(data_models_flat_constrained[model_i + 1][1]),
+                )
+                significant_globally = (
+                    all(
+                        is_significantly_better(
+                            tuple(data_models_flat_constrained[model_up][1]),
+                            tuple(data_models_flat_constrained[model_down][1]),
+                        )
+                        for model_up in range(0, model_i+1)
+                        for model_down in range(model_i + 1, len(data_models_flat_constrained))
+                    )
+                )
+
+            rank_top = model_i
+            for rank_top in range(model_i, 0-1, -1):
+                if is_significantly_better(
+                    tuple(data_models_flat_constrained[rank_top-1][1]),
+                    tuple(data_models_flat_constrained[model_i][1]),
+                ):
+                    break
+
+            rank_bottom = model_i
+            for rank_bottom in range(model_i, len(data_models_flat_constrained)-1):
+                if is_significantly_better(
+                    tuple(data_models_flat_constrained[model_i][1]),
+                    tuple(data_models_flat_constrained[rank_bottom+1][1]),
+                ):
+                    break
+
+            data_typst_constrained.append({
+                "model": model,
+                "scores_seg": scores_seg,
+                "scores_doc": scores_doc,
+                "scores_mean": statistics.mean(scores_nonan),
+                "rank_top": rank_top + 1,
+                "rank_bottom": rank_bottom + 1,
+                "cluster": (
+                    "nothing" if model_i == len(data_models_flat_constrained) - 1 else
+                    "yes_cluster" if significant_globally else # type: ignore
+                    "yes_local" if significant_locally # type: ignore
+                    else "nothing"
+                )
+            })
+
         typst.compile(
             input="humeval/02-template-perlang.typ",
             sys_inputs={
@@ -408,13 +486,45 @@ typst.compile(
     output=f"humeval/compiled/results_global.pdf"
 )
 
-data_global_flat_constrained = [x for x in data_global_flat if " OPEN" in x[0]]
+# constrained (open-weights) systems only: a copy of data_global with only the
+# constrained models, so avg rank is computed from scratch against just this
+# subset, not inherited from ranking against the full (open + closed) pool
+data_global_constrained = {model: scores for model, scores in data_global.items() if " OPEN" in model}
+
+data_global_flat_constrained = [
+    [
+        model,
+        {lang: data_global_constrained[model][lang] for lang in langs_all}
+    ]
+    for model in data_global_constrained
+]
+
+model_average_rank_constrained = {
+    model: statistics.mean(
+        [
+            sum(
+                1 for other_model in data_global_constrained
+                if data_global_constrained[other_model][lang] > data_global_constrained[model][lang]
+            ) / len([
+                other_model for other_model in data_global_constrained
+                if data_global_constrained[other_model][lang] != -100
+            ])
+            for lang in langs_all
+            if data_global_constrained[model][lang] != -100
+        ]
+    )
+    for model in data_global_constrained
+}
+data_global_flat_constrained.sort(key=lambda x: model_average_rank_constrained[x[0]])
 
 typst.compile(
     input="humeval/02-template-global.typ",
     sys_inputs={
         "data": json.dumps(data_global_flat_constrained),
-        "data_rank": json.dumps({model: rank*len(model_average_rank) for model, rank in model_average_rank.items()}),
+        "data_rank": json.dumps({
+            model: rank * len(model_average_rank_constrained)
+            for model, rank in model_average_rank_constrained.items()
+        }),
     },
     output=f"humeval/compiled/results_global_constrained.pdf"
 )
